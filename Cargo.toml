@@ -3,6 +3,7 @@ members = [
   "crates/adlp-protocol",
   "crates/audio-modem-core",
   "tools/adlp-cli",
+  "apps/audio_modem/rust",
 ]
 resolver = "2"
 
@@ -11,7 +12,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/matveyb9/AudioModem"
-rust-version = "1.75"
+rust-version = "1.85"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

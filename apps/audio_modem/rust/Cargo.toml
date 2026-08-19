@@ -1,0 +1,20 @@
+[package]
+name = "audio_modem_bridge"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+description = "Thin Flutter Rust Bridge facade for AudioModem's ADLP and WAV bootstrap core"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[lints.rust]
+# flutter_rust_bridge generates the only required unsafe FFI calls. Hand-written
+# bridge code remains denied by the crate root, while the generated module is scoped out.
+unsafe_code = "deny"
+
+[dependencies]
+adlp-protocol = { path = "../../../crates/adlp-protocol" }
+audio-modem-core = { path = "../../../crates/audio-modem-core" }
+flutter_rust_bridge = "=2.12.0"

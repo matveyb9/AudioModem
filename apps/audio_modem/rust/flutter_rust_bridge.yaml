@@ -1,0 +1,11 @@
+rust_input: crate::api
+dart_output: ../lib/src/rust
+c_output: ../rust_builder/ios/Classes/frb.h
+duplicated_c_output:
+  - ../rust_builder/macos/Classes/frb.h
+rust_root: .
+rust_output: src/frb_generated.rs
+dart_entrypoint_class_name: AudioModemRust
+dart_format_line_length: 100
+type_64bit_int: true
+stop_on_error: true

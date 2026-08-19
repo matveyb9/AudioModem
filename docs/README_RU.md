@@ -14,6 +14,8 @@
 | Reference | [Transmission presets](reference/presets.md) | [Пресеты передачи](reference/presets_RU.md) | Profile identifiers и назначение |
 | Operations | [Troubleshooting](troubleshooting.md) | [Диагностика](troubleshooting_RU.md) | Воспроизводимые наблюдения и отчёты |
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Проверенная работа и ближайшие milestones |
+| Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Граница native facade и проверки WAV в памяти |
+| Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Структура generated code и команда повторной генерации |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Нормативный wire object и WAV bootstrap carrier |
 
 ## Правило поддержки перевода

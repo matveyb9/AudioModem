@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   quality:
-    name: Analyze, test and build web
+    name: Analyze, test and build application targets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -18,6 +18,14 @@ jobs:
         run: |
           git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Install stable Rust for Cargokit
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Install Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang cmake ninja-build libgtk-3-dev
       - name: Disable Flutter telemetry
         run: flutter --disable-analytics
       - name: Install dependencies
@@ -35,3 +43,6 @@ jobs:
       - name: Build web
         working-directory: apps/audio_modem
         run: flutter build web --release
+      - name: Build Linux debug
+        working-directory: apps/audio_modem
+        run: flutter build linux --debug
