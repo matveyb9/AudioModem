@@ -103,7 +103,7 @@ pub fn decode_wav(wav: &[u8]) -> Result<DecodedTransfer, CodecError> {
 
 fn push_bit(samples: &mut Vec<i16>, bit: bool) {
     let amplitude = if bit { 18_000 } else { -18_000 };
-    samples.extend(std::iter::repeat(amplitude).take(SAMPLES_PER_BIT));
+    samples.resize(samples.len() + SAMPLES_PER_BIT, amplitude);
 }
 
 fn push_byte(samples: &mut Vec<i16>, byte: u8) {
@@ -171,7 +171,7 @@ fn parse_wav(wav: &[u8]) -> Result<(u32, Vec<i16>), CodecError> {
     let end = 44_usize
         .checked_add(length)
         .ok_or(CodecError::TruncatedSignal)?;
-    if length % 2 != 0 || end > wav.len() {
+    if length & 1 != 0 || end > wav.len() {
         return Err(CodecError::TruncatedSignal);
     }
     let samples = wav[44..end]
