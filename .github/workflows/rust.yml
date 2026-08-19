@@ -2,20 +2,8 @@ name: Rust quality
 
 on:
   pull_request:
-    paths:
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "crates/**"
-      - "tools/**"
-      - ".github/workflows/rust.yml"
   push:
     branches: [main]
-    paths:
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "crates/**"
-      - "tools/**"
-      - ".github/workflows/rust.yml"
 
 permissions:
   contents: read
@@ -28,7 +16,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install stable Rust quality components
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt clippy
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
           rustup default stable
       - name: Check formatting
         run: cargo fmt --all -- --check

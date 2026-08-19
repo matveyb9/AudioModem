@@ -2,14 +2,8 @@ name: Flutter quality
 
 on:
   pull_request:
-    paths:
-      - "apps/audio_modem/**"
-      - ".github/workflows/flutter.yml"
   push:
     branches: [main]
-    paths:
-      - "apps/audio_modem/**"
-      - ".github/workflows/flutter.yml"
 
 permissions:
   contents: read

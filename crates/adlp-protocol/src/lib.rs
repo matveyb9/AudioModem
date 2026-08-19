@@ -235,7 +235,7 @@ fn validate_string(
     value: &str,
     max_bytes: usize,
 ) -> Result<(), ProtocolError> {
-    if value.as_bytes().len() > max_bytes || value.as_bytes().len() > u8::MAX as usize {
+    if value.len() > max_bytes || value.len() > u8::MAX as usize {
         return Err(ProtocolError::FieldTooLong(field));
     }
     Ok(())
@@ -248,7 +248,7 @@ fn push_string(
     max_bytes: usize,
 ) -> Result<(), ProtocolError> {
     validate_string(field, value, max_bytes)?;
-    target.push(value.as_bytes().len() as u8);
+    target.push(value.len() as u8);
     target.extend_from_slice(value.as_bytes());
     Ok(())
 }
