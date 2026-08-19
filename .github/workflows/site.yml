@@ -19,10 +19,7 @@ jobs:
         run: |
           test -s site/index.html
           test -s site/styles.css
-          test -s site/assets/hero.png
-          test -s site/assets/presets.png
-          test -s site/assets/wav.png
-          test -s site/assets/mark.png
+          ! grep -q 'assets/' site/index.html
           grep -q 'spec/protocol-v1.md' site/index.html
 
   publish:
