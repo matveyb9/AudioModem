@@ -3,51 +3,45 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="AudioModem — open-source аудиомодем для передачи данных через динамики, кабель, рацию и WAV." />
-    <link rel="icon" href="assets/mark.png" />
+    <meta name="description" content="AudioModem — open-source проект передачи данных через аудиоканалы." />
     <link rel="stylesheet" href="styles.css" />
     <title>AudioModem — audio data link</title>
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#top"><img src="assets/mark.png" alt="" /><b>Audio<span>Modem</span></b></a>
-      <nav aria-label="Разделы"><a href="#model">Как работает</a><a href="#presets">Пресеты</a><a href="#protocol">Протокол</a><a href="#contribute">Участие</a></nav>
+      <a class="brand" href="#overview" aria-label="AudioModem"><span class="mark">⌁</span><b>AudioModem</b></a>
+      <nav aria-label="Разделы"><a href="#quick-start">Быстрый старт</a><a href="#protocol">Протокол</a><a href="#presets">Пресеты</a><a href="#contribute">Участие</a></nav>
       <a class="github" href="https://github.com/matveyb9/AudioModem">GitHub ↗</a>
     </header>
 
-    <main id="top">
-      <section class="hero grid-paper">
-        <div class="hero-copy">
-          <p class="status"><i></i> Experimental / v0.1 bootstrap</p>
-          <h1>Передайте байты там, где проходит <em>звук.</em></h1>
-          <p class="lede">Open-source аудиомодем для текста и файлов. Один объект данных, один протокол — динамик, кабель, рация, Bluetooth-аудиомаршрут или WAV.</p>
-          <p class="actions"><a class="dark-button" href="#start">Начать с WAV ↓</a><a class="line-button" href="#protocol">Читать ADLP v1 →</a></p>
-        </div>
-        <figure class="hero-figure"><img src="assets/hero.png" alt="Абстрактная схема передачи аудиосигнала от динамика к микрофону" /><figcaption><span><b>Signal path / bootstrap</b><br />PCM • 48 kHz • lossless WAV</span><strong>≈</strong></figcaption></figure>
-      </section>
-      <section class="stats grid-paper">
-        <div><b>01</b><h2>ADLP</h2><p>Versioned data-link container</p></div><div><b>02</b><h2>WAV</h2><p>Reproducible first transport</p></div><div><b>03</b><h2>FEC</h2><p>Profiled reliability roadmap</p></div><div><b>04</b><h2>OSS</h2><p>Public specification and vectors</p></div>
-      </section>
-
-      <section id="model" class="section model">
-        <aside><p class="eyebrow">01 / Модель канала</p><h2>Аудио — это транспорт.</h2></aside>
-        <div><p class="big-copy">N1 собирает объект, ADLP превращает его в кадры, модем создаёт PCM. N2 выполняет обратный путь и публикует файл только после проверки. Канал доставки не меняет объект и его контроль целостности.</p>
-          <div class="route-grid"><article><b>01</b><h3>Динамик → микрофон</h3><p>Акустический маршрут в одной комнате.</p></article><article><b>02</b><h3>Аудиокабель</h3><p>Предсказуемый линейный тракт.</p></article><article><b>03</b><h3>Радиотракт</h3><p>Внешняя аудиолиния с ручным PTT.</p></article><article><b>04</b><h3>Lossless WAV</h3><p>Файл как переносимый аудиоканал.</p></article></div>
+    <main>
+      <section class="intro">
+        <div class="content">
+          <p class="badges"><span class="blue">Экспериментальный проект</span><span>ADLP v1</span><span>Rust + Flutter</span></p>
+          <h1>AudioModem</h1>
+          <p class="lede">Open-source проект для передачи текста и файлов через аудиоканалы. Контейнер данных не зависит от маршрута: WAV, динамик и микрофон, кабель, рация или системный аудиовыход.</p>
+          <p class="actions"><a class="primary" href="#quick-start">Быстрый старт</a><a class="secondary" href="https://github.com/matveyb9/AudioModem">Исходный код</a></p>
+          <dl class="project-meta"><div><dt>Текущая цель</dt><dd>Воспроизводимый WAV round-trip</dd></div><div><dt>Реализация</dt><dd>Rust core и Flutter UI</dd></div><div><dt>Репозиторий</dt><dd><a href="https://github.com/matveyb9/AudioModem/issues">Issues и Discussions</a></dd></div></dl>
         </div>
       </section>
 
-      <section id="presets" class="section presets">
-        <div><p class="eyebrow">02 / Профили</p><h2>Скорость — это настройка. Надёжность — это выбор.</h2><p>Пресет задаёт параметры физического профиля, но не меняет формат объекта. Приёмник читает устойчивый bootstrap control frame и сам выбирает нужный демодулятор.</p><img src="assets/presets.png" alt="Три абстрактных графика, иллюстрирующие компромисс между скоростью и надёжностью" /></div>
-        <div class="preset-list"><article><b>01</b><div><h3>Надёжный</h3><p>Шумная комната, рация, неизвестный тракт</p></div><small>Acoustic-1/Reliable<br /><strong>Максимум избыточности</strong></small></article><article><b>02</b><div><h3>Сбалансированный</h3><p>Обычный динамик, микрофон или кабель</p></div><small>Acoustic-1/Balanced<br /><strong>Рабочая отправная точка</strong></small></article><article><b>03</b><div><h3>Быстрый</h3><p>Чистый line-in или воспроизводимый WAV</p></div><small>Acoustic-1/Fast<br /><strong>Меньше избыточности</strong></small></article></div>
-      </section>
+      <div class="layout content">
+        <aside><p>На этой странице</p><a href="#overview">Обзор</a><a href="#quick-start">Быстрый старт</a><a href="#routes">Аудиомаршруты</a><a href="#presets">Пресеты</a><a href="#protocol">Протокол и безопасность</a><a href="#contribute">Участие</a></aside>
+        <div class="documentation">
+          <section id="overview"><h2>Обзор</h2><div class="cards"><article><b>Один формат объекта</b><p>ADLP переносит манифест, payload и контроль целостности независимо от аудиомаршрута.</p></article><article><b>Сменяемые маршруты</b><p>Модем создаёт PCM, а устройство или приложение определяет, как это аудио дойдёт до приёмника.</p></article><article><b>Явная модель доверия</b><p>Позывной — display metadata. Аутентификация и шифрование остаются отдельными будущими расширениями.</p></article></div></section>
 
-      <section id="protocol" class="section wav-section">
-        <figure><img src="assets/wav.png" alt="Архивный носитель и абстрактная звуковая полоса, представляющие lossless WAV" /><figcaption>Reference transport: WAV</figcaption></figure>
-        <div><p class="eyebrow">03 / Начните воспроизводимо</p><h2 id="start">Первый канал — WAV.</h2><p class="big-copy">WAV исключает неизвестный аудиомаршрут из первой проверки. Сначала соберите текст в WAV, передайте файл любым способом, затем декодируйте и проверьте исходный объект.</p><div class="commands"><b>CLI / bootstrap</b><code>cargo run -p adlp-cli -- encode-text hello.wav N1 "Привет" reliable</code><code>cargo run -p adlp-cli -- decode hello.wav</code></div><p class="callout">Базовый WAV-профиль — детерминированный bootstrap для проверки контейнера, а не заявление об устойчивой передаче по воздуху.</p><a class="line-button" href="https://github.com/matveyb9/AudioModem/blob/main/spec/protocol-v1.md">Открыть спецификацию →</a></div>
-      </section>
+          <section id="quick-start"><h2>Быстрый старт: воспроизводимый WAV workflow</h2><p class="subhead">Начните с lossless файла до проверки неизвестного live-аудиомаршрута.</p><ol><li><b>Соберите workspace.</b> Bootstrap CLI упаковывает текст в ADLP v1 объект и создаёт mono PCM WAV 48 kHz.</li><li><b>Передайте WAV-файл.</b> Любой файловый обмен может служить первым reference transport.</li><li><b>Декодируйте и проверьте.</b> Приёмник проверяет кадр и итоговую целостность ADLP до возврата объекта.</li></ol><div class="code"><p>CLI / bootstrap</p><code>cargo run -p adlp-cli -- encode-text hello.wav N1 "Привет" reliable<br />cargo run -p adlp-cli -- decode hello.wav</code></div></section>
 
-      <section id="contribute" class="contribute"><div><p class="eyebrow">04 / Open source from day one</p><h2>Протокол, тесты и решения — открыто.</h2></div><div class="contribute-grid"><article><b>RFC для совместимости</b><p>Изменения контейнера, PHY и crypto envelope проходят обсуждение.</p></article><article><b>Золотые WAV-векторы</b><p>Формат проверяется независимо от устройства и UI.</p></article><article><b>Private security reports</b><p>Уязвимости не публикуются до доступного исправления.</p></article><article><b>Матрица устройств</b><p>Маршруты и профили подтверждаются измерениями.</p></article></div></section>
+          <section id="routes"><h2>Аудиомаршруты</h2><div class="table-wrap"><table><thead><tr><th>Маршрут</th><th>Сценарий</th><th>Статус</th></tr></thead><tbody><tr><td>Динамик → микрофон</td><td>Прямая акустическая передача</td><td><span>Запланировано</span></td></tr><tr><td>Аудиокабель</td><td>Линейный вход и выход</td><td><span>Запланировано</span></td></tr><tr><td>Радиотракт</td><td>Внешний audio interface и PTT</td><td><span>Запланировано</span></td></tr><tr><td>WAV-файл</td><td>Lossless import/export</td><td><span class="blue">WAV bootstrap готов</span></td></tr></tbody></table></div></section>
+
+          <section id="presets"><h2>Пресеты передачи</h2><p class="subhead">Пресет идентифицирует физический профиль, но не меняет ADLP object container.</p><div class="table-wrap"><table><thead><tr><th>Пресет</th><th>ID профиля</th><th>Лучше подходит для</th><th>Компромисс</th></tr></thead><tbody><tr><td>Надёжный</td><td><code>Acoustic-1/Reliable</code></td><td>Шумный или неизвестный тракт</td><td>Больше избыточности</td></tr><tr><td>Сбалансированный</td><td><code>Acoustic-1/Balanced</code></td><td>Обычный динамик, микрофон или кабель</td><td>Рабочая отправная точка</td></tr><tr><td>Быстрый</td><td><code>Acoustic-1/Fast</code></td><td>Чистый cable или WAV</td><td>Меньше избыточности</td></tr></tbody></table></div></section>
+
+          <section id="protocol"><h2>Протокол и безопасность</h2><div class="cards two"><article><b>ADLP v1 bootstrap</b><p>Текущий scope: versioned manifest, callsign, object type, profile ID, payload и CRC-32C. WAV bootstrap детерминирован и предназначен для воспроизводимых тестов.</p><a href="https://github.com/matveyb9/AudioModem/blob/main/spec/protocol-v1.md">Спецификация протокола ↗</a></article><article><b>Security posture</b><p>Начальный режим не шифруется. Позывные не являются доказательством личности. Будущие key exchange и encryption потребуют публичного RFC и security review.</p><a href="https://github.com/matveyb9/AudioModem/blob/main/SECURITY.md">Security policy ↗</a></article></div></section>
+
+          <section id="contribute"><h2>Участие в проекте</h2><p>В репозитории есть contribution guide, code of conduct, private security reporting, issue forms, CODEOWNERS и branch rules. Изменения совместимости контейнера или физического слоя предлагаются через RFC.</p><p class="actions"><a class="secondary" href="https://github.com/matveyb9/AudioModem/blob/main/CONTRIBUTING.md">Contribution guide ↗</a><a class="secondary" href="https://github.com/matveyb9/AudioModem/discussions">GitHub Discussions ↗</a></p></section>
+        </div>
+      </div>
     </main>
-    <footer><span>AudioModem / Experimental open-source audio data link</span><span><a href="https://github.com/matveyb9/AudioModem">Repository</a> · <a href="https://github.com/matveyb9/AudioModem/blob/main/spec/protocol-v1.md">ADLP v1</a> · <a href="https://github.com/matveyb9/AudioModem/blob/main/CONTRIBUTING.md">Contributing</a></span></footer>
+    <footer><div class="content"><span>AudioModem · Экспериментальный open-source audio data link</span><a href="https://github.com/matveyb9/AudioModem">Репозиторий ↗</a></div></footer>
   </body>
 </html>
