@@ -1,0 +1,30 @@
+name: Protocol RFC
+description: Propose a change that affects transfer or modem compatibility.
+title: "rfc: "
+labels: ["protocol", "rfc"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and problem statement
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed design
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility, migration and profile impact
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      placeholder: Include parser tests, simulation, golden vectors, device matrix and security considerations as applicable.
+    validations:
+      required: true

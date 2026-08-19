@@ -1,0 +1,43 @@
+name: Flutter quality
+
+on:
+  pull_request:
+    paths:
+      - "apps/audio_modem/**"
+      - ".github/workflows/flutter.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/audio_modem/**"
+      - ".github/workflows/flutter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Analyze, test and build web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Fetch Flutter stable
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Disable Flutter telemetry
+        run: flutter --disable-analytics
+      - name: Install dependencies
+        working-directory: apps/audio_modem
+        run: flutter pub get
+      - name: Check formatting
+        working-directory: apps/audio_modem
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analyze
+        working-directory: apps/audio_modem
+        run: flutter analyze
+      - name: Test
+        working-directory: apps/audio_modem
+        run: flutter test
+      - name: Build web
+        working-directory: apps/audio_modem
+        run: flutter build web --release

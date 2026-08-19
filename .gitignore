@@ -1,0 +1,44 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+**/build/
+**/.plugin_symlinks/
+apps/audio_modem/.metadata
+apps/audio_modem/*.iml
+apps/audio_modem/android/.gradle/
+apps/audio_modem/android/local.properties
+apps/audio_modem/ios/Pods/
+apps/audio_modem/ios/.symlinks/
+apps/audio_modem/macos/Pods/
+apps/audio_modem/macos/.symlinks/
+apps/audio_modem/linux/flutter/ephemeral/
+apps/audio_modem/windows/flutter/ephemeral/
+
+# Secrets, recordings and local diagnostics
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.mobileprovision
+*.wav
+!fixtures/**/*.wav
+*.pcm
+*.raw
+*.log
+device-logs/
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/

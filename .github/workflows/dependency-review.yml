@@ -1,0 +1,23 @@
+name: Dependency review
+
+on:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "apps/audio_modem/pubspec.yaml"
+      - "apps/audio_modem/pubspec.lock"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Record dependency changes for review
+        run: |
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" -- Cargo.toml Cargo.lock apps/audio_modem/pubspec.yaml apps/audio_modem/pubspec.lock .github/workflows || true
+          echo "Review changed dependency manifests and lock files before merge."

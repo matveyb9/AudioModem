@@ -1,0 +1,13 @@
+[package]
+name = "adlp-cli"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Experimental AudioModem WAV transport CLI"
+
+[lints]
+workspace = true
+
+[dependencies]
+adlp-protocol = { path = "../../crates/adlp-protocol" }
+audio-modem-core = { path = "../../crates/audio-modem-core" }

@@ -1,0 +1,27 @@
+name: Reproducible bug
+description: Report a defect with a minimal, safe reproduction.
+title: "bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach private recordings, personal files, secrets or keys. Use synthetic data and anonymised diagnostics only."
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      placeholder: Include app or CLI version, protocol/profile and exact steps.
+    validations:
+      required: true

@@ -1,0 +1,59 @@
+name: Documentation site
+
+on:
+  pull_request:
+    paths:
+      - "site/**"
+      - "spec/**"
+      - "README.md"
+      - ".github/workflows/site.yml"
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "spec/**"
+      - "README.md"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate static documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify required site files and local links
+        run: |
+          test -s site/index.html
+          test -s site/styles.css
+          test -s site/assets/hero.png
+          test -s site/assets/presets.png
+          test -s site/assets/wav.png
+          test -s site/assets/mark.png
+          grep -q 'spec/protocol-v1.md' site/index.html
+
+  publish:
+    name: Publish GitHub Pages branch
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Publish only the static site to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan gh-pages
+          git reset --hard
+          cp -a site/. .
+          touch .nojekyll
+          git add --all
+          git commit -m "docs: publish GitHub Pages" || exit 0
+          git push --force origin HEAD:gh-pages
