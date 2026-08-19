@@ -27,9 +27,9 @@
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          { "context": "Rust quality / Format, lint and test" },
-          { "context": "Flutter quality / Analyze, test and build web" },
-          { "context": "Documentation site / Validate static documentation" }
+          { "context": "Format, lint and test" },
+          { "context": "Analyze, test and build web" },
+          { "context": "Validate static documentation" }
         ]
       }
     }

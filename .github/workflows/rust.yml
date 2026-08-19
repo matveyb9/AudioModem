@@ -2,20 +2,8 @@ name: Rust quality
 
 on:
   pull_request:
-    paths:
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "crates/**"
-      - "tools/**"
-      - ".github/workflows/rust.yml"
   push:
     branches: [main]
-    paths:
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "crates/**"
-      - "tools/**"
-      - ".github/workflows/rust.yml"
 
 permissions:
   contents: read
