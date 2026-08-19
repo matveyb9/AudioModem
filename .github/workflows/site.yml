@@ -50,9 +50,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$RUNNER_TEMP/audiomodem-site"
+          cp -a site/. "$RUNNER_TEMP/audiomodem-site/"
           git switch --orphan gh-pages
           git reset --hard
-          cp -a site/. .
+          cp -a "$RUNNER_TEMP/audiomodem-site/." .
           touch .nojekyll
           git add --all
           git commit -m "docs: publish GitHub Pages" || exit 0
