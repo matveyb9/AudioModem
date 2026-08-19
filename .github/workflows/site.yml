@@ -21,7 +21,8 @@ jobs:
           test -s site/ru/index.html
           test -s site/styles.css
           ! grep -q 'assets/' site/index.html
-          grep -q 'spec/protocol-v1.md' site/index.html
+          grep -q 'docs/guides/getting-started.md' site/index.html
+          grep -q 'docs/guides/getting-started_RU.md' site/ru/index.html
           grep -q 'README_RU.md' README.md
           grep -q 'README.md' README_RU.md
       - name: Verify English and Russian document pairs
