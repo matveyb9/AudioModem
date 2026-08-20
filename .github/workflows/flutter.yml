@@ -88,3 +88,10 @@ jobs:
       - name: Build Android debug APK
         working-directory: apps/audio_modem
         run: flutter build apk --debug --no-pub
+      - name: Upload Android debug APK for device acceptance
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-modem-android-debug-${{ github.sha }}
+          path: apps/audio_modem/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
