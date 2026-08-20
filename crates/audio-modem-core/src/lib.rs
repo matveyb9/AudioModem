@@ -5,6 +5,7 @@
 //! profile can replace this simple symbol mapper without changing ADLP bytes.
 
 pub mod acoustic1;
+pub mod acoustic2;
 
 use std::fmt;
 
@@ -177,7 +178,8 @@ pub(crate) fn parse_canonical_wav(wav: &[u8]) -> Result<(u32, Vec<i16>), CodecEr
         return Err(CodecError::TruncatedSignal);
     }
     let samples = wav[44..end]
-        .chunks_exact(2)
+        // `length & 1` was checked above, so every two-byte chunk is a PCM sample.
+        .chunks(2)
         .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
         .collect();
     Ok((le_u32(&wav[24..28])?, samples))

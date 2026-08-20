@@ -17,8 +17,10 @@
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Граница native facade и проверки WAV в памяти |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Структура generated code и команда повторной генерации |
 | Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Источники дизайна и явные receiver/FEC constraints |
+| Research | [Acoustic-2 measurement sources](research/acoustic-2-measurement-sources.md) | [Источники измерений Acoustic-2](research/acoustic-2-measurement-sources_RU.md) | Ограничения controlled PCM transforms и timing acquisition |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Нормативный wire object и WAV bootstrap carrier |
 | Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Экспериментальный B-FSK carrier и граница compatibility |
+| Specification | [Acoustic-2](../spec/acoustic-2.md) | [Acoustic-2 на русском](../spec/acoustic-2_RU.md) | Экспериментальный controlled PCM measurement contract |
 
 ## Правило поддержки перевода
 

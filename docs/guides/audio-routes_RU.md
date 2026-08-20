@@ -32,9 +32,15 @@ route → PCM → selected PHY profile → ADLP frame → verified object
 
 Adapter использует `file_picker`: его документированный API поддерживает custom extension filters, чтение bytes и save-file dialogs на Android, iOS, Linux, macOS, Windows и web.[1] Adapter не утверждает, что файл можно воспроизвести через динамик, захватить с микрофона, направить по Bluetooth или получить через аудиокабель.
 
+## Controlled measurements Acoustic-2
+
+Acoustic-2 не является дополнительной строкой route matrix. Это repository-only measurement layer, который разбирает Acoustic-1 WAV, применяет declared integer PCM transform, повторно кодирует canonical WAV и вызывает тот же Acoustic-1 decoder. Его result содержит только input/output sample counts, dropped samples, bounded acquisition offset, consumed samples и decoded ADLP profile после successful decode. Полный порядок, parameter bounds и non-goals фиксирует [Acoustic-2 contract](../../spec/acoustic-2_RU.md).
+
+Leading silence, attenuation, seeded additive noise, hard clipping и fixed periodic sample deletion — воспроизводимые transform inputs, а не measurements real channel. Result не сообщает SNR, BER, range, room-noise tolerance, clock drift, device behavior или readiness live route.
+
 ## Golden compatibility fixture
 
-`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` — фиксированный canonical fixture для ADLP v1 WAV bootstrap. `crates/audio-modem-core/tests/fixtures/acoustic-1-v1-text-balanced.wav` выполняет ту же роль для экспериментального Acoustic-1 carrier. Их Rust regression tests декодируют fixtures и сравнивают целые byte sequences со свежими deterministic encodings документированных входных objects. Поэтому любое различие байтов является изменением codec, влияющим на compatibility, и должно быть проверено вместе с обновлёнными fixture, hash и protocol rationale.
+`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` — фиксированный canonical fixture для ADLP v1 WAV bootstrap. `crates/audio-modem-core/tests/fixtures/acoustic-1-v1-text-balanced.wav` выполняет ту же роль для экспериментального Acoustic-1 carrier. Их Rust regression tests декодируют fixtures и сравнивают целые byte sequences со свежими deterministic encodings документированных входных objects. Тот же Acoustic-1 fixture также служит Acoustic-2 golden measurement vector, который фиксирует declared transform parameters и codec-observable output values. Поэтому любое изменение byte или transform-result является изменением codec/harness, влияющим на compatibility, и должно быть проверено вместе с updated fixture, hash или measurement rationale.
 
 ## Позывные и приватность
 
