@@ -2,7 +2,7 @@
 
 [English (canonical)](flutter-rust-bridge.md) · **Русский перевод**
 
-> **Translation of:** [docs/architecture/flutter-rust-bridge.md](flutter-rust-bridge.md). **Last synced:** 2026-08-20.
+> **Translation of:** [docs/architecture/flutter-rust-bridge.md](flutter-rust-bridge.md). **Last synced:** 2026-08-21.
 
 Native bridge открывает Flutter доступ к Rust ADLP и двум controlled WAV codecs: детерминированному bootstrap и экспериментальному Acoustic-1. В app есть отдельный local file adapter для выбора и сохранения WAV bytes, тогда как сам bridge всё ещё не добавляет audio capture, playback, Bluetooth, background transmission или encryption. Его цель — сделать один реальный app-to-core round trip наблюдаемым и тестируемым без дублирования protocol или codec logic в Dart.
 
@@ -20,18 +20,35 @@ Bridge crate — тонкий native facade. `adlp-protocol` остаётся о
 | --- | --- | --- | --- |
 | `encodeTextToWav` | Положительный `sessionId`, callsign, UTF-8 text, profile и явный carrier (`bootstrap` или `acoustic1`) | Canonical 48 kHz mono 16-bit WAV bytes и transfer metadata | Typed Rust error становится Dart exception; partial WAV не возвращается. |
 | `decodeWav` | WAV bytes из памяти и явный carrier | Verified text metadata, UTF-8 payload, sample rate и consumed samples | Wrong-carrier, framing, manifest или CRC-32C failure становится exception; payload не возвращается. |
+| `encodeFileToWav` | Положительный `sessionId`, callsign, leaf file name, declared MIME type, bounded bytes, profile и явный carrier | Canonical 48 kHz mono 16-bit WAV bytes и transfer metadata | Invalid metadata или oversized payload становится Dart exception; partial WAV не возвращается. |
+| `decodeWavFile` | WAV bytes из памяти и явный carrier | Verified file metadata, original bytes, sample rate и consumed samples | Text object, wrong-carrier, framing, manifest или CRC-32C failure становится exception; file bytes не возвращаются. |
 
 В этом первом срезе Flutter app выбирает session value. Экран использует positive timestamp-derived value только как local transfer metadata; это не timestamp claim, identity claim или cryptographic nonce.
 
 ## Граница file adapter
 
-`PlatformWavFileAdapter` открывает локальные platform dialogs и возвращает opaque WAV bytes или передаёт проверенный in-memory buffer на сохранение. Он не анализирует waveform, не принимает решение о protocol validity и не читает payload. Flutter workbench передаёт все выбранные bytes в `decodeWav`; при failed decode полученный object не сохраняется. Это оставляет user filesystem interaction за пределами deterministic protocol и codec boundary.
+`PlatformWavFileAdapter` открывает локальные platform dialogs и возвращает opaque WAV bytes или передаёт проверенный in-memory buffer на сохранение. `PlatformPayloadFileAdapter` отдельно выбирает local outbound file или сохраняет только bytes, возвращённые `decodeWavFile`. Ни один adapter не анализирует waveform, не принимает решение о protocol validity, не выводит MIME type из received bytes и не читает payload до Rust validation. Workbench сначала пробует typed text decoder, затем typed file decoder для imported WAV; при failed decode полученный object не сохраняется. Это оставляет user filesystem interaction за пределами deterministic protocol и codec boundary.
 
 ## Carriers, profiles и limits
 
 Bridge принимает carriers `bootstrap` и `acoustic1`. Bootstrap сохраняет один deterministic symbol mapper для каждого profile. Acoustic-1 использует отдельный B-FSK mapper с profile-dependent symbol windows, Hamming(7,4), bounded frame acquisition и лимитом 256 bytes для ADLP wire object; точный compatibility contract указан в [Acoustic-1 RFC](../../spec/acoustic-1_RU.md). UI хранит carrier selection с явным experimental notice и использует тот же выбор для import, export и verification.
 
-Bridge принимает `reliable`, `balanced`, `fast` и `narrowband`, напрямую соответствующие ADLP profile IDs 1–4. Native facade отклоняет text длиннее **8 KiB** до WAV allocation. Этот более низкий application limit защищает mobile или desktop UI от случайного создания непрактично больших buffers, пока общий protocol limit остаётся больше для future profiles.
+Bridge принимает `reliable`, `balanced`, `fast` и `narrowband`, напрямую соответствующие ADLP profile IDs 1–4. Native facade отклоняет text или file payload длиннее **8 KiB** до WAV allocation. Этот более низкий application limit защищает mobile или desktop UI от случайного создания непрактично больших buffers, пока общий protocol limit остаётся больше для future profiles.
+
+## Native integration smoke check
+
+Widget tests используют fakes, чтобы normal Flutter suite оставался portable. Отдельный opt-in Linux smoke test загружает shared library из freshly built bundle, вызывает real generated bridge, round-trips bounded file object и проверяет wrong-carrier rejection.
+
+```bash
+export PATH="/home/ubuntu/.local/flutter/bin:$HOME/.cargo/bin:$PATH"
+cd apps/audio_modem
+flutter build linux --debug
+AUDIOMODEM_RUN_NATIVE_BRIDGE_SMOKE=1 \
+  LD_LIBRARY_PATH="$PWD/build/linux/x64/debug/bundle/lib" \
+  flutter test test/native_bridge_smoke_test.dart
+```
+
+Этот check доказывает native application-to-core binding для documented fixture. Он не тестирует microphone, speaker, cable, Bluetooth path, radio interface или любой live route.
 
 ## Trust boundary
 

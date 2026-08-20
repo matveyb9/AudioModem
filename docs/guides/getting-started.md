@@ -24,7 +24,7 @@ cargo run -p adlp-cli -- encode-text hello.wav N1 "Hello from AudioModem" reliab
 
 The command serializes an ADLP v1 text object, then maps it into a mono 48 kHz, signed 16-bit PCM WAV file. `N1` is a callsign displayed in open metadata. It does **not** identify or authenticate the sender.
 
-## Move the file and decode it
+## Move a text WAV and decode it
 
 Copy `hello.wav` to the receiving machine using any ordinary file channel, then run:
 
@@ -33,6 +33,18 @@ cargo run -p adlp-cli -- decode hello.wav
 ```
 
 The decoder prints the ADLP version, profile, session value, callsign, sample count and text. A decoder must reject malformed bootstrap framing or a CRC-32C mismatch before it returns the payload.
+
+## Encode a small file as WAV
+
+The Rust CLI can also verify a bounded ADLP `File` object before there is a Flutter file-transfer UI. The first facade limit is **8 KiB** of file payload. Supply an explicit MIME type when known; the default is `application/octet-stream`.
+
+```bash
+printf 'fixture bytes\n' > sample.bin
+cargo run -p adlp-cli -- encode-file sample.wav N1 sample.bin application/octet-stream balanced
+cargo run -p adlp-cli -- decode sample.wav
+```
+
+The decoder prints the original leaf file name, declared MIME type and payload size after ADLP framing and CRC-32C validation. This is a reproducible Rust/WAV contract only. It does **not** yet provide a Flutter file picker/receipt workflow, persistence, file-size policy beyond the initial facade limit, or a physical audio route.
 
 ## Controlled Acoustic-1 WAV experiment
 
@@ -60,6 +72,7 @@ The command prints an accepted/rejected codec result, sample counts, bounded acq
 | This test proves | This test does not prove |
 | --- | --- |
 | The implemented ADLP v1 object can survive one deterministic WAV encode/decode cycle. | That speech-band audio, a speaker, microphone, cable, Bluetooth adapter or radio can carry the waveform. |
+| A bounded file object preserves its name, declared MIME type and bytes through the Rust CLI WAV reference path. | That the Flutter application can send or save a file-object transfer yet. |
 | The final integrity check detects the intentional corrupted-frame cases covered by the Rust tests; Acoustic-1 also has bounded noise, framing, FEC and golden-vector regression cases. | That a callsign belongs to a person, device or key. |
 | An Acoustic-2 transform vector has deterministic PCM output and codec-observable acquisition values. | That synthetic gain/noise/clip/deletion values predict a physical audio channel. |
 | The test is portable between supported Rust development environments. | That a transmission is encrypted, confidential or authenticated. |

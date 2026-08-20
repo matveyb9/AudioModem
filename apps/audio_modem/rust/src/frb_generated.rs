@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1548122970;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2115612387;
 
 // Section: executor
 
@@ -46,6 +46,41 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__wav_bootstrap__decode_wav_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "decode_wav_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_wav_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_carrier = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::wav_bootstrap::decode_wav_file(api_wav_bytes, api_carrier)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__wav_bootstrap__decode_wav_text_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -75,6 +110,53 @@ fn wire__crate__api__wav_bootstrap__decode_wav_text_impl(
                 transform_result_sse::<_, String>((move || {
                     let output_ok =
                         crate::api::wav_bootstrap::decode_wav_text(api_wav_bytes, api_carrier)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__wav_bootstrap__encode_file_to_wav_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "encode_file_to_wav",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_session_id = <u64>::sse_decode(&mut deserializer);
+            let api_sender_callsign = <String>::sse_decode(&mut deserializer);
+            let api_file_name = <String>::sse_decode(&mut deserializer);
+            let api_mime_type = <String>::sse_decode(&mut deserializer);
+            let api_payload = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_profile = <String>::sse_decode(&mut deserializer);
+            let api_carrier = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::wav_bootstrap::encode_file_to_wav(
+                        api_session_id,
+                        api_sender_callsign,
+                        api_file_name,
+                        api_mime_type,
+                        api_payload,
+                        api_profile,
+                        api_carrier,
+                    )?;
                     Ok(output_ok)
                 })())
             }
@@ -132,6 +214,32 @@ impl SseDecode for String {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <Vec<u8>>::sse_decode(deserializer);
         return String::from_utf8(inner).unwrap();
+    }
+}
+
+impl SseDecode for crate::api::wav_bootstrap::DecodedFileTransfer {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_sessionId = <u64>::sse_decode(deserializer);
+        let mut var_senderCallsign = <String>::sse_decode(deserializer);
+        let mut var_profile = <String>::sse_decode(deserializer);
+        let mut var_carrier = <String>::sse_decode(deserializer);
+        let mut var_fileName = <String>::sse_decode(deserializer);
+        let mut var_mimeType = <String>::sse_decode(deserializer);
+        let mut var_payload = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_sampleRateHz = <u32>::sse_decode(deserializer);
+        let mut var_samplesConsumed = <u32>::sse_decode(deserializer);
+        return crate::api::wav_bootstrap::DecodedFileTransfer {
+            session_id: var_sessionId,
+            sender_callsign: var_senderCallsign,
+            profile: var_profile,
+            carrier: var_carrier,
+            file_name: var_fileName,
+            mime_type: var_mimeType,
+            payload: var_payload,
+            sample_rate_hz: var_sampleRateHz,
+            samples_consumed: var_samplesConsumed,
+        };
     }
 }
 
@@ -232,9 +340,18 @@ fn pde_ffi_dispatcher_primary_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         1 => {
+            wire__crate__api__wav_bootstrap__decode_wav_file_impl(port, ptr, rust_vec_len, data_len)
+        }
+        2 => {
             wire__crate__api__wav_bootstrap__decode_wav_text_impl(port, ptr, rust_vec_len, data_len)
         }
-        2 => wire__crate__api__wav_bootstrap__encode_text_to_wav_impl(
+        3 => wire__crate__api__wav_bootstrap__encode_file_to_wav_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        4 => wire__crate__api__wav_bootstrap__encode_text_to_wav_impl(
             port,
             ptr,
             rust_vec_len,
@@ -258,6 +375,34 @@ fn pde_ffi_dispatcher_sync_impl(
 
 // Section: rust2dart
 
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::wav_bootstrap::DecodedFileTransfer {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.session_id.into_into_dart().into_dart(),
+            self.sender_callsign.into_into_dart().into_dart(),
+            self.profile.into_into_dart().into_dart(),
+            self.carrier.into_into_dart().into_dart(),
+            self.file_name.into_into_dart().into_dart(),
+            self.mime_type.into_into_dart().into_dart(),
+            self.payload.into_into_dart().into_dart(),
+            self.sample_rate_hz.into_into_dart().into_dart(),
+            self.samples_consumed.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::wav_bootstrap::DecodedFileTransfer
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::wav_bootstrap::DecodedFileTransfer>
+    for crate::api::wav_bootstrap::DecodedFileTransfer
+{
+    fn into_into_dart(self) -> crate::api::wav_bootstrap::DecodedFileTransfer {
+        self
+    }
+}
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::wav_bootstrap::DecodedTextTransfer {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
@@ -313,6 +458,21 @@ impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.into_bytes(), serializer);
+    }
+}
+
+impl SseEncode for crate::api::wav_bootstrap::DecodedFileTransfer {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u64>::sse_encode(self.session_id, serializer);
+        <String>::sse_encode(self.sender_callsign, serializer);
+        <String>::sse_encode(self.profile, serializer);
+        <String>::sse_encode(self.carrier, serializer);
+        <String>::sse_encode(self.file_name, serializer);
+        <String>::sse_encode(self.mime_type, serializer);
+        <Vec<u8>>::sse_encode(self.payload, serializer);
+        <u32>::sse_encode(self.sample_rate_hz, serializer);
+        <u32>::sse_encode(self.samples_consumed, serializer);
     }
 }
 

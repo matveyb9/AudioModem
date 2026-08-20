@@ -245,6 +245,8 @@ mod tests {
     use adlp_protocol::TransferProfile;
 
     const GOLDEN_WAV: &[u8] = include_bytes!("../tests/fixtures/adlp-v1-text-balanced.wav");
+    const GOLDEN_FILE_WAV: &[u8] = include_bytes!("../tests/fixtures/adlp-v1-file-balanced.wav");
+    const GOLDEN_FILE_PAYLOAD: &[u8] = include_bytes!("../tests/fixtures/adlp-v1-file-source.bin");
 
     #[test]
     fn wav_round_trip_preserves_adlp_object() {
@@ -279,5 +281,23 @@ mod tests {
         assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
         assert_eq!(decoded.samples_consumed, 20_160);
         assert_eq!(encode_wav(&expected).unwrap(), GOLDEN_WAV);
+    }
+
+    #[test]
+    fn golden_file_wav_fixture_decodes_and_matches_deterministic_encoder() {
+        let expected = WireObject::file(
+            2,
+            "FILEFIXTURE",
+            "adlp-v1-file-source.bin",
+            "application/octet-stream",
+            GOLDEN_FILE_PAYLOAD.to_vec(),
+            TransferProfile::Balanced,
+        )
+        .unwrap();
+        let decoded = decode_wav(GOLDEN_FILE_WAV).unwrap();
+
+        assert_eq!(decoded.object, expected);
+        assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
+        assert_eq!(encode_wav(&expected).unwrap(), GOLDEN_FILE_WAV);
     }
 }

@@ -82,6 +82,7 @@ pub enum ProtocolError {
     UnsupportedObjectKind(u8),
     InvalidUtf8,
     FieldTooLong(&'static str),
+    MissingManifestField(&'static str),
     PayloadTooLarge,
     IntegrityMismatch,
 }
@@ -103,6 +104,9 @@ impl fmt::Display for ProtocolError {
             Self::InvalidUtf8 => write!(formatter, "invalid UTF-8 manifest field"),
             Self::FieldTooLong(field) => {
                 write!(formatter, "manifest field {field} exceeds its limit")
+            }
+            Self::MissingManifestField(field) => {
+                write!(formatter, "manifest field {field} must not be empty")
             }
             Self::PayloadTooLarge => write!(formatter, "payload exceeds the protocol limit"),
             Self::IntegrityMismatch => write!(formatter, "ADLP integrity check failed"),
@@ -130,6 +134,30 @@ impl WireObject {
                 file_name: String::new(),
             },
             payload: text.into().into_bytes(),
+        };
+        object.validate()?;
+        Ok(object)
+    }
+
+    pub fn file(
+        session_id: u64,
+        callsign: impl Into<String>,
+        file_name: impl Into<String>,
+        mime_type: impl Into<String>,
+        payload: Vec<u8>,
+        profile: TransferProfile,
+    ) -> Result<Self, ProtocolError> {
+        let object = Self {
+            manifest: TransferManifest {
+                protocol_version: PROTOCOL_VERSION,
+                profile,
+                session_id,
+                object_kind: ObjectKind::File,
+                sender_callsign: callsign.into(),
+                mime_type: mime_type.into(),
+                file_name: file_name.into(),
+            },
+            payload,
         };
         object.validate()?;
         Ok(object)
@@ -223,6 +251,20 @@ impl WireObject {
         validate_string("sender_callsign", &self.manifest.sender_callsign, 32)?;
         validate_string("mime_type", &self.manifest.mime_type, 96)?;
         validate_string("file_name", &self.manifest.file_name, 160)?;
+        if self.manifest.mime_type.is_empty() {
+            return Err(ProtocolError::MissingManifestField("mime_type"));
+        }
+        match self.manifest.object_kind {
+            ObjectKind::Text if !self.manifest.file_name.is_empty() => {
+                return Err(ProtocolError::MissingManifestField(
+                    "file_name must be empty for text",
+                ));
+            }
+            ObjectKind::File if self.manifest.file_name.is_empty() => {
+                return Err(ProtocolError::MissingManifestField("file_name"));
+            }
+            _ => {}
+        }
         if self.payload.len() > MAX_PAYLOAD_BYTES {
             return Err(ProtocolError::PayloadTooLarge);
         }
@@ -317,6 +359,45 @@ mod tests {
             WireObject::decode(&object.encode().unwrap()).unwrap(),
             object
         );
+    }
+
+    #[test]
+    fn file_round_trip_preserves_manifest_and_binary_payload() {
+        let object = WireObject::file(
+            43,
+            "N2",
+            "sample.bin",
+            "application/octet-stream",
+            vec![0, 1, 2, 255],
+            TransferProfile::Reliable,
+        )
+        .unwrap();
+        assert_eq!(
+            WireObject::decode(&object.encode().unwrap()).unwrap(),
+            object
+        );
+    }
+
+    #[test]
+    fn file_object_requires_a_name_and_mime_type() {
+        assert!(WireObject::file(
+            43,
+            "N2",
+            "",
+            "application/octet-stream",
+            vec![1],
+            TransferProfile::Reliable,
+        )
+        .is_err());
+        assert!(WireObject::file(
+            43,
+            "N2",
+            "sample.bin",
+            "",
+            vec![1],
+            TransferProfile::Reliable,
+        )
+        .is_err());
     }
 
     #[test]
