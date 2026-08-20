@@ -50,6 +50,8 @@ Committed fixture выше намеренно является **unexecuted temp
 
 Extension намеренно узкий. Он не разрешает unexecuted template включать device/evidence fields и не изменяет требования для остальных routes. Он отклоняет Android observation с mismatched effective format или любым value, предполагающим raw audio retention либо auto-resume.
 
+Для procedure tester используйте [Android device-acceptance runbook](android-device-acceptance-runbook_RU.md). Он связывает contextual permission, focus, interruption, lifecycle и privacy observations с этой schema, не превращая procedure или valid JSON в route-support claim.
+
 ```bash
 node tools/device-acceptance/validate-report.mjs \
   tools/device-acceptance/fixtures/android-speaker-microphone-template-v1.json
