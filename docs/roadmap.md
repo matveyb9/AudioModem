@@ -12,13 +12,14 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | Local WAV file workflow | Completed | User-selected save/open dialogs export/import verified WAV bytes; file-object payloads remain future work. |
 | Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
 | Acoustic-2 | Experimental measurement harness | Declared integer PCM transforms, bounded acquisition observables and golden measurement contract exist around Acoustic-1; no device or channel metric claim. |
+| Device-acceptance infrastructure | Completed reporting/tooling contract | Schema, validator, privacy-preserving intake template and decision gates prepare future evidence; no physical-route observation or supported device claim exists. |
 | Audio adapters | Planned | Capture/playback, cable, Bluetooth and radio-interface adapters with per-platform acceptance tests. |
 | Trust and encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX and independent security review. |
 | Release engineering | Planned | Signed packages, compatibility matrix, changelog, SBOM/checksums and clear support policy. |
 
 ## Decision gates
 
-The project should not declare live delivery before an Acoustic-1 profile, a route adapter and an acceptance test exist together. It should not declare encryption before a reviewed RFC defines key ownership, exchange, verification, recovery and failure behavior. It should not claim cross-platform support before a target has a reproducible release artifact and documented limits.
+The project should not declare live delivery before an Acoustic-1 profile, a route adapter and an acceptance test exist together. A schema-valid device report establishes format only; a support claim additionally requires reviewable physical-route evidence and the published supported-route gate. The project should not declare encryption before a reviewed RFC defines key ownership, exchange, verification, recovery and failure behavior. It should not claim cross-platform support before a target has a reproducible release artifact and documented limits.
 
 ## Participation
 

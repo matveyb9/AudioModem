@@ -11,11 +11,13 @@ This directory holds the human-readable technical documentation for AudioModem. 
 | Reference | [Platform support](reference/platform-support.md) | [Поддержка платформ](reference/platform-support_RU.md) | Runners versus supported features |
 | Reference | [Transmission presets](reference/presets.md) | [Пресеты передачи](reference/presets_RU.md) | Profile identifiers and intent |
 | Operations | [Troubleshooting](troubleshooting.md) | [Диагностика](troubleshooting_RU.md) | Reproducible observations and reports |
+| Operations | [Device acceptance](operations/device-acceptance.md) | [Приёмка устройств](operations/device-acceptance_RU.md) | Evidence contract and decision gates for future live routes |
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Verified work and upcoming milestones |
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Native facade and in-memory WAV verification boundary |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Generated-code layout and regeneration command |
 | Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Design sources and explicit receiver/FEC constraints |
 | Research | [Acoustic-2 measurement sources](research/acoustic-2-measurement-sources.md) | [Источники измерений Acoustic-2](research/acoustic-2-measurement-sources_RU.md) | Controlled PCM transform and timing-acquisition constraints |
+| Research | [Device-acceptance sources](research/device-acceptance-sources.md) | [Источники device acceptance](research/device-acceptance-sources_RU.md) | Reproducible evidence, metadata and privacy constraints |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Normative wire object and WAV bootstrap carrier |
 | Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Experimental B-FSK carrier and compatibility boundary |
 | Specification | [Acoustic-2](../spec/acoustic-2.md) | [Acoustic-2 на русском](../spec/acoustic-2_RU.md) | Experimental controlled PCM measurement contract |

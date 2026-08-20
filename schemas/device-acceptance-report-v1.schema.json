@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matveyb9/AudioModem/schemas/device-acceptance-report-v1.schema.json",
+  "title": "AudioModem device acceptance report v1",
+  "type": "object",
+  "required": ["schema_version", "report_type", "report_id", "privacy_acknowledged"],
+  "properties": {
+    "schema_version": { "const": "audio-modem-device-acceptance/v1" },
+    "report_type": { "enum": ["template", "measurement"] },
+    "report_id": { "type": "string", "pattern": "^DARP-[a-z0-9-]{3,64}$" },
+    "privacy_acknowledged": { "const": true },
+    "notes": { "type": "string", "maxLength": 1000 },
+    "device": {
+      "type": "object",
+      "required": ["route", "source", "sink"],
+      "properties": {
+        "route": { "enum": ["speaker_microphone", "audio_cable", "bluetooth", "radio_interface"] },
+        "source": { "$ref": "#/$defs/endpoint" },
+        "sink": { "$ref": "#/$defs/endpoint" }
+      },
+      "additionalProperties": false
+    },
+    "test": {
+      "type": "object",
+      "required": ["app_revision", "carrier", "profile", "fixture_path", "fixture_sha256", "command"],
+      "properties": {
+        "app_revision": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "carrier": { "const": "acoustic1" },
+        "profile": { "enum": ["reliable", "balanced", "fast", "narrowband"] },
+        "fixture_path": { "type": "string", "pattern": "^[A-Za-z0-9._/-]+$" },
+        "fixture_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "command": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_class", "run_count", "accepted_runs", "rejected_runs", "recording_availability"],
+      "properties": {
+        "evidence_class": { "enum": ["codec_reproduction", "controlled_pcm", "physical_route"] },
+        "run_count": { "type": "integer", "minimum": 1 },
+        "accepted_runs": { "type": "integer", "minimum": 0 },
+        "rejected_runs": { "type": "integer", "minimum": 0 },
+        "recording_availability": { "enum": ["not_collected", "private_available_on_request", "public_redacted", "public_unrestricted"] },
+        "recording_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["classification", "summary"],
+      "properties": {
+        "classification": { "enum": ["observed", "inconclusive", "rejected"] },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 1000 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "endpoint": {
+      "type": "object",
+      "required": ["platform", "device_class"],
+      "properties": {
+        "platform": { "enum": ["android", "ios", "windows", "macos", "linux", "web", "external"] },
+        "device_class": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "public_model": { "type": "string", "minLength": 1, "maxLength": 120 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "properties": { "report_type": { "const": "template" } },
+      "not": {
+        "anyOf": [
+          { "required": ["device"] },
+          { "required": ["test"] },
+          { "required": ["evidence"] },
+          { "required": ["outcome"] }
+        ]
+      }
+    },
+    {
+      "properties": { "report_type": { "const": "measurement" } },
+      "required": ["device", "test", "evidence", "outcome"]
+    }
+  ],
+  "additionalProperties": false
+}

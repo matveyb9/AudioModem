@@ -1,0 +1,7 @@
+{
+  "schema_version": "audio-modem-device-acceptance/v1",
+  "report_type": "measurement",
+  "report_id": "DARP-invalid-missing-evidence",
+  "privacy_acknowledged": true,
+  "notes": "Intentionally invalid schema fixture; no physical route was executed."
+}
