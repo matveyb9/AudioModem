@@ -54,11 +54,11 @@ Text must not be silently overloaded to represent an image or file. The first bo
 
 ### Stage E — Add one live-audio platform adapter
 
-Only after the Flutter shell and PCM contract are stable should work begin on one platform. The initial target must be selected explicitly in a route RFC; it will specify plugin/native APIs, session/permission policy, interruption behavior, one route, buffer boundaries, diagnostics and stop/dispose semantics. The adapter starts as experimental and defaults to unavailable outside its declared scope.
+After the Flutter shell and PCM contract are stable, platform work begins with one route RFC. The first selected design target is **Android API 26+ foreground playback/capture**, documented in the [Android live-audio adapter v1 RFC](../spec/android-live-audio-adapter-v1.md). It specifies native APIs, session/permission policy, interruption behavior, default-route boundary, buffer/format checks, diagnostics and stop/dispose semantics. The adapter remains unavailable until the RFC and acceptance change receive review; it will remain unavailable outside its declared scope.
 
 | Entry condition | Work product | Exit gate | Explicit non-claim |
 | --- | --- | --- | --- |
-| Route RFC, test method and target build are approved. | One adapter, unit/integration tests and a privacy-preserving device-acceptance template. | The adapter reports only its declared availability; a reviewed physical-route report exists for the exact scope. | One observation is not a broad compatibility, range, Bluetooth or radio claim. |
+| Android route RFC, machine-checked acceptance extension and target build are approved. | One Android adapter, unit/integration tests and real privacy-preserving physical-route reports. | The adapter reports only its declared availability; a reviewed physical-route report exists for the exact scope. | One observation is not a broad compatibility, range, Bluetooth or radio claim. |
 
 ### Stage F — Publish evidence, compatibility and releases
 
@@ -76,4 +76,4 @@ After repeated reviewed evidence, compatibility documentation may describe the e
 
 ## Immediate execution order
 
-The active implementation milestone is **Stage B preparation**. First, the project will define a small transfer-task model and fake bridge fixture for the existing text/WAV workflow. Next, the Flutter shell will be separated from its current page-local state so that widget tests can drive send, receive, cancellation, unavailable and rejection paths without native audio. The existing Rust bridge and golden fixtures stay unchanged until the shell contract identifies a concrete missing typed value.
+The active milestone is **Stage E Android route design review**. The repository now has a bilingual Android foreground RFC, research decision, unexecuted reporting template and validator extension that requires exact v1 PCM, permission, focus, stop and privacy fields for future Android speaker-to-microphone measurements. The next implementation change may add a native Android adapter only after this design slice is reviewed and merged. It must begin unavailable outside Android API 26+ foreground scope and must not create a physical-route claim without real reviewed observations.

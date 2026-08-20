@@ -2,7 +2,7 @@
 
 [English (canonical)](platform-support.md) · **Русский перевод**
 
-> **Translation of:** [docs/reference/platform-support.md](platform-support.md). **Last synced:** 2026-08-20.
+> **Translation of:** [docs/reference/platform-support.md](platform-support.md). **Last synced:** 2026-08-21.
 
 AudioModem хранит Flutter runners для Android, iOS, Windows, macOS, Linux и Web в одном application directory. Rust workspace предоставляет container и WAV bootstrap codec. Эта структура — implementation target, а не утверждение, что каждая платформа уже поддерживает каждый route.
 
@@ -10,7 +10,7 @@ AudioModem хранит Flutter runners для Android, iOS, Windows, macOS, Lin
 
 | Платформа | Flutter runner | Rust/WAV integration | Локальный WAV workflow | Live audio | Примечание |
 | --- | --- | --- | --- | --- | --- |
-| Android | Scaffolded | Bridge source integrated; target build/run не проверен | Source implementation; target dialog не проверен | Планируется | Нужны target build, permission и route-adapter acceptance tests. |
+| Android | Scaffolded | Bridge source integrated; target build/run не проверен | Source implementation; target dialog не проверен | Draft experimental design | Существуют [foreground adapter RFC](../../spec/android-live-audio-adapter-v1_RU.md) и validator extension; target build, permission behavior, adapter и route evidence остаются непроверенными. |
 | iOS | Scaffolded | Bridge source integrated; target build/run не проверен | Source implementation; target dialog не проверен | Планируется | Нужны target build, permission и route-adapter acceptance tests. |
 | Windows | Scaffolded | Bridge source integrated; target build/run не проверен | Source implementation; target dialog не проверен | Планируется | Нужны native device enumeration и routing tests. |
 | macOS | Scaffolded | Bridge source integrated; target build/run не проверен | Source implementation; target dialog не проверен | Планируется | Нужны native device enumeration и routing tests. |

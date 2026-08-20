@@ -54,9 +54,36 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 1000 }
       },
       "additionalProperties": false
+    },
+    "adapter_observation": {
+      "type": "object",
+      "required": ["adapter_contract", "api_level", "operation", "requested_format", "effective_format", "permission_state", "focus_outcome", "route_change_observed", "interruption_policy", "raw_pcm_retention"],
+      "properties": {
+        "adapter_contract": { "const": "android-live-audio-adapter/v1" },
+        "api_level": { "type": "integer", "minimum": 26 },
+        "operation": { "const": "playback_capture" },
+        "requested_format": { "$ref": "#/$defs/audioModemV1Format" },
+        "effective_format": { "$ref": "#/$defs/audioModemV1Format" },
+        "permission_state": { "const": "granted" },
+        "focus_outcome": { "enum": ["granted", "delayed_then_granted"] },
+        "route_change_observed": { "type": "boolean" },
+        "interruption_policy": { "const": "stop_no_auto_resume" },
+        "raw_pcm_retention": { "const": "discarded" }
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {
+    "audioModemV1Format": {
+      "type": "object",
+      "required": ["sample_rate_hz", "channels", "sample_format"],
+      "properties": {
+        "sample_rate_hz": { "const": 48000 },
+        "channels": { "const": 1 },
+        "sample_format": { "const": "pcm_s16le" }
+      },
+      "additionalProperties": false
+    },
     "endpoint": {
       "type": "object",
       "required": ["platform", "device_class"],
@@ -76,13 +103,33 @@
           { "required": ["device"] },
           { "required": ["test"] },
           { "required": ["evidence"] },
-          { "required": ["outcome"] }
+          { "required": ["outcome"] },
+          { "required": ["adapter_observation"] }
         ]
       }
     },
     {
       "properties": { "report_type": { "const": "measurement" } },
       "required": ["device", "test", "evidence", "outcome"]
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "report_type": { "const": "measurement" },
+          "device": {
+            "properties": {
+              "route": { "const": "speaker_microphone" },
+              "source": { "properties": { "platform": { "const": "android" } }, "required": ["platform"] },
+              "sink": { "properties": { "platform": { "const": "android" } }, "required": ["platform"] }
+            },
+            "required": ["route", "source", "sink"]
+          }
+        },
+        "required": ["report_type", "device"]
+      },
+      "then": { "required": ["adapter_observation"] }
     }
   ],
   "additionalProperties": false

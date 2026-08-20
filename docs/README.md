@@ -20,10 +20,12 @@ This directory holds the human-readable technical documentation for AudioModem. 
 | Research | [Acoustic-2 measurement sources](research/acoustic-2-measurement-sources.md) | [Источники измерений Acoustic-2](research/acoustic-2-measurement-sources_RU.md) | Controlled PCM transform and timing-acquisition constraints |
 | Research | [Device-acceptance sources](research/device-acceptance-sources.md) | [Источники device acceptance](research/device-acceptance-sources_RU.md) | Reproducible evidence, metadata and privacy constraints |
 | Research | [Live-audio adapter sources](research/live-audio-adapter-sources.md) | [Источники live-audio adapter](research/live-audio-adapter-sources_RU.md) | Session, permission, focus and lifecycle constraints |
+| Research | [Android live-audio adapter sources](research/android-live-audio-adapter-sources.md) | [Источники Android live-audio adapter](research/android-live-audio-adapter-sources_RU.md) | First-target decision and Android/PipeWire route constraints |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Normative wire object and WAV bootstrap carrier |
 | Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Experimental B-FSK carrier and compatibility boundary |
 | Specification | [Acoustic-2](../spec/acoustic-2.md) | [Acoustic-2 на русском](../spec/acoustic-2_RU.md) | Experimental controlled PCM measurement contract |
 | Specification | [Live-audio adapter v1](../spec/live-audio-adapter-v1.md) | [Live-audio adapter v1 на русском](../spec/live-audio-adapter-v1_RU.md) | Typed unavailable-first contract for future routes |
+| Specification | [Android live-audio adapter v1](../spec/android-live-audio-adapter-v1.md) | [Android live-audio adapter v1 на русском](../spec/android-live-audio-adapter-v1_RU.md) | Draft foreground Android route lifecycle and acceptance constraints |
 
 ## Translation convention
 

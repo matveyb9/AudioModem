@@ -2,7 +2,7 @@
 
 [English (canonical)](device-acceptance.md) · **Русский перевод**
 
-> **Translation of:** [docs/operations/device-acceptance.md](device-acceptance.md). **Last synced:** 2026-08-20. Английский оригинал определяет contract implementation.
+> **Translation of:** [docs/operations/device-acceptance.md](device-acceptance.md). **Last synced:** 2026-08-21. Английский оригинал определяет contract implementation.
 
 Этот protocol регулирует будущие evidence для live audio route. Он **не** делает supported ни платформу, ни устройство, ни кабель, ни Bluetooth path, ни radio interface, ни Acoustic-1/Acoustic-2 experiment. Один report — observation, ожидающее review, а не performance claim.
 
@@ -43,6 +43,20 @@ node tools/device-acceptance/validate-report.mjs \
 ```
 
 Committed fixture выше намеренно является **unexecuted template**, а не device result. Новый measurement sidecar создаётся только после получения реальных hardware observations.
+
+## Android foreground v1 extension
+
+[Android foreground live-audio adapter RFC](../../spec/android-live-audio-adapter-v1_RU.md) выбирает first experimental platform-route design. Он не включает route. Generic schema и validator теперь резервируют `adapter_observation` для будущего `measurement`, где route точно `speaker_microphone`, а source и sink platforms — оба `android`. Такой record обязан указать reviewed adapter contract, Android API level не ниже 26, playback/capture operation, requested и effective **48 kHz / mono / PCM16 LE** format, granted microphone permission, granted или delayed-then-granted focus, route-change observation, stop-without-auto-resume policy и discarded raw PCM.
+
+Extension намеренно узкий. Он не разрешает unexecuted template включать device/evidence fields и не изменяет требования для остальных routes. Он отклоняет Android observation с mismatched effective format или любым value, предполагающим raw audio retention либо auto-resume.
+
+```bash
+node tools/device-acceptance/validate-report.mjs \
+  tools/device-acceptance/fixtures/android-speaker-microphone-template-v1.json
+node tools/device-acceptance/test-validator.mjs
+```
+
+Android template остаётся unexecuted. В нём нет device, run, outcome, permission или route observation и его нельзя приводить как Android measurement.
 
 ## Decision gates
 

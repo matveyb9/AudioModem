@@ -1,6 +1,6 @@
 # Device-acceptance protocol
 
-**Status:** Experimental operations contract · **Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](device-acceptance_RU.md)
+**Status:** Experimental operations contract · **Last reviewed:** 2026-08-21 · **English (canonical)** · [Русский](device-acceptance_RU.md)
 
 This protocol governs future evidence for a live audio route. It does **not** make any platform, device, cable, Bluetooth path, radio interface or Acoustic-1/Acoustic-2 experiment supported. A single report is an observation awaiting review; it is not a performance claim.
 
@@ -41,6 +41,20 @@ node tools/device-acceptance/validate-report.mjs \
 ```
 
 The committed fixture above is intentionally an **unexecuted template**, not a device result. A contributor creates a new measurement sidecar only after obtaining real hardware observations.
+
+## Android foreground v1 extension
+
+The [Android foreground live-audio adapter RFC](../../spec/android-live-audio-adapter-v1.md) selects the first experimental platform-route design. It does not enable a route. The generic schema and validator now reserve `adapter_observation` for a future `measurement` whose route is exactly `speaker_microphone` and whose source and sink platforms are both `android`. That record must declare the reviewed adapter contract, Android API level of at least 26, playback/capture operation, requested and effective **48 kHz / mono / PCM16 LE** format, granted microphone permission, granted or delayed-then-granted focus, route-change observation, stop-without-auto-resume policy and discarded raw PCM.
+
+This extension is deliberately narrow. It neither permits an unexecuted template to include device/evidence fields nor changes requirements for every other route. It rejects an Android observation with a mismatched effective format or any value that would imply raw audio retention or auto-resume.
+
+```bash
+node tools/device-acceptance/validate-report.mjs \
+  tools/device-acceptance/fixtures/android-speaker-microphone-template-v1.json
+node tools/device-acceptance/test-validator.mjs
+```
+
+The Android template is still unexecuted. It contains no device, run, outcome, permission or route observation and must not be cited as an Android measurement.
 
 ## Decision gates
 

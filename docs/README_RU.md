@@ -22,10 +22,12 @@
 | Research | [Acoustic-2 measurement sources](research/acoustic-2-measurement-sources.md) | [Источники измерений Acoustic-2](research/acoustic-2-measurement-sources_RU.md) | Ограничения controlled PCM transforms и timing acquisition |
 | Research | [Device-acceptance sources](research/device-acceptance-sources.md) | [Источники device acceptance](research/device-acceptance-sources_RU.md) | Ограничения reproducible evidence, metadata и privacy |
 | Research | [Live-audio adapter sources](research/live-audio-adapter-sources.md) | [Источники live-audio adapter](research/live-audio-adapter-sources_RU.md) | Ограничения session, permission, focus и lifecycle |
+| Research | [Android live-audio adapter sources](research/android-live-audio-adapter-sources.md) | [Источники Android live-audio adapter](research/android-live-audio-adapter-sources_RU.md) | Решение о first target и Android/PipeWire route constraints |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Нормативный wire object и WAV bootstrap carrier |
 | Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Экспериментальный B-FSK carrier и граница compatibility |
 | Specification | [Acoustic-2](../spec/acoustic-2.md) | [Acoustic-2 на русском](../spec/acoustic-2_RU.md) | Экспериментальный controlled PCM measurement contract |
 | Specification | [Live-audio adapter v1](../spec/live-audio-adapter-v1.md) | [Live-audio adapter v1 на русском](../spec/live-audio-adapter-v1_RU.md) | Typed unavailable-first contract для будущих routes |
+| Specification | [Android live-audio adapter v1](../spec/android-live-audio-adapter-v1.md) | [Android live-audio adapter v1 на русском](../spec/android-live-audio-adapter-v1_RU.md) | Draft foreground Android route lifecycle и acceptance constraints |
 
 ## Правило поддержки перевода
 

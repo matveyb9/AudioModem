@@ -1,0 +1,7 @@
+{
+  "schema_version": "audio-modem-device-acceptance/v1",
+  "report_type": "template",
+  "report_id": "DARP-android-speaker-microphone-template",
+  "privacy_acknowledged": true,
+  "notes": "Unexecuted Android foreground speaker-to-microphone reporting template. Do not add device, test, evidence, outcome or adapter_observation fields until real hardware observations exist."
+}
