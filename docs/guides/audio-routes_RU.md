@@ -11,6 +11,7 @@
 | Маршрут | Модель доставки | Bootstrap status | Требование до статуса “supported” |
 | --- | --- | --- | --- |
 | Lossless WAV | Файл переносит canonical PCM samples. | Реализован для text round trips и явного локального import/export в Flutter workbench. | Наблюдения acoustic interoperability на разных платформах и опубликованная fixture compatibility policy. |
+| Controlled Acoustic-1 WAV | Файл переносит B-FSK PCM samples и тот же ADLP v1 wire object. | Экспериментальный: реализованы framing, bounded synchronisation, Hamming(7,4), profile-driven symbol windows и golden vector. | Route adapter плюс declared speaker-to-microphone/device measurements. |
 | Динамик → микрофон | Local acoustic simplex path. | Планируется. | Synchronization, level handling, FEC, noisy-room measurements и device tests. |
 | Аудиокабель | Line-level PCM path. | Планируется. | Device selection, sample-rate handling, gain guidance и cross-platform tests. |
 | OS-managed Bluetooth | Выбранный audio input/output route. | Планируется. | Per-platform permission/routing adapters и device compatibility testing. |
@@ -33,7 +34,7 @@ Adapter использует `file_picker`: его документирован�
 
 ## Golden compatibility fixture
 
-`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` — фиксированный canonical fixture для ADLP v1 WAV bootstrap. Его Rust regression test декодирует fixture и сравнивает всю последовательность его байтов со свежей deterministic encoding документированного входного object. Поэтому любое различие байтов является изменением codec, влияющим на compatibility, и должно быть проверено вместе с обновлёнными fixture, hash и protocol rationale.
+`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` — фиксированный canonical fixture для ADLP v1 WAV bootstrap. `crates/audio-modem-core/tests/fixtures/acoustic-1-v1-text-balanced.wav` выполняет ту же роль для экспериментального Acoustic-1 carrier. Их Rust regression tests декодируют fixtures и сравнивают целые byte sequences со свежими deterministic encodings документированных входных objects. Поэтому любое различие байтов является изменением codec, влияющим на compatibility, и должно быть проверено вместе с обновлёнными fixture, hash и protocol rationale.
 
 ## Позывные и приватность
 

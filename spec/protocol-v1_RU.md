@@ -2,13 +2,13 @@
 
 [English (canonical)](protocol-v1.md) · **Русский перевод**
 
-> **Translation of:** [spec/protocol-v1.md](protocol-v1.md). **Last synced:** 2026-08-19. Английский оригинал является нормативным для совместимости реализации.
+> **Translation of:** [spec/protocol-v1.md](protocol-v1.md). **Last synced:** 2026-08-20. Английский оригинал является нормативным для совместимости реализации.
 
-**Статус:** Experimental. Этот документ определяет детерминированный bootstrap path для automated tests и lossless WAV exchange. Это ещё не over-the-air acoustic PHY specification.
+**Статус:** Experimental. Этот документ определяет ADLP v1 wire object и детерминированный bootstrap path для automated tests и lossless WAV exchange. Он не является over-the-air acoustic PHY specification; отдельный [экспериментальный carrier Acoustic-1](acoustic-1_RU.md) имеет собственный controlled-test scope.
 
 ## Слои
 
-`TransferManifest + payload` кодируются в ADLP wire object. Bootstrap codec отображает объект в mono 48 kHz 16-bit PCM WAV. Будущая модуляция `Acoustic-1` заменяет bootstrap symbol mapper, а не wire object.
+`TransferManifest + payload` кодируются в ADLP wire object. Bootstrap codec отображает объект в mono 48 kHz 16-bit PCM WAV. Отдельный codec `Acoustic-1` также переносит неизменённый wire object и заменяет только symbol mapper, а не ADLP bytes.
 
 ## ADLP wire object
 

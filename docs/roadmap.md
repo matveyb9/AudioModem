@@ -1,6 +1,6 @@
 # Roadmap
 
-**Last reviewed:** 2026-08-19 · **English (canonical)** · [Русский](roadmap_RU.md)
+**Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](roadmap_RU.md)
 
 This roadmap describes intended order, not dates or guaranteed delivery. It distinguishes verified repository state from research and planned product capability.
 
@@ -8,9 +8,9 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | --- | --- | --- |
 | GitHub-first bootstrap | Completed | Public repository policy, issue forms, CI workflows, protected main and static-site workflow. |
 | ADLP v1 and WAV reference | Completed | Rust container, CRC-32C, deterministic PCM/WAV round trip, CLI and initial specification. |
-| Flutter ↔ Rust bridge | Next | The Flutter UI invokes real ADLP/WAV encode and decode operations through a reviewed bridge. |
-| File object workflow | Planned | Select a file, preserve MIME/name metadata, encode/decode it and verify integrity. |
-| Acoustic-1 | Planned | Framing, synchronization, FEC, profile behavior, measurements and golden vectors for speaker-to-microphone. |
+| Flutter ↔ Rust bridge | Completed | Native UI invokes reviewed Rust ADLP/WAV encode/decode; web reports the native codec unavailable. |
+| Local WAV file workflow | Completed | User-selected save/open dialogs export/import verified WAV bytes; file-object payloads remain future work. |
+| Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
 | Audio adapters | Planned | Capture/playback, cable, Bluetooth and radio-interface adapters with per-platform acceptance tests. |
 | Trust and encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX and independent security review. |
 | Release engineering | Planned | Signed packages, compatibility matrix, changelog, SBOM/checksums and clear support policy. |

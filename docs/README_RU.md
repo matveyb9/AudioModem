@@ -4,11 +4,11 @@
 
 Этот каталог содержит читаемую техническую документацию AudioModem. Английские файлы являются каноническими. Русские переводы используют суффикс `_RU.md`, ссылаются на английский оригинал и носят информативный характер, пока RFC явно не установит иное.
 
-> **Translation of:** [docs/README.md](README.md). **Last synced:** 2026-08-19.
+> **Translation of:** [docs/README.md](README.md). **Last synced:** 2026-08-20.
 
 | Раздел | Английский оригинал | Русский перевод | Область |
 | --- | --- | --- | --- |
-| Guides | [Quick start](guides/getting-started.md) | [Быстрый старт](guides/getting-started_RU.md) | Проверенный text-to-WAV round trip |
+| Guides | [Quick start](guides/getting-started.md) | [Быстрый старт](guides/getting-started_RU.md) | Проверенные bootstrap и controlled Acoustic-1 WAV workflows |
 | Guides | [Audio routes](guides/audio-routes.md) | [Аудиомаршруты](guides/audio-routes_RU.md) | Маршруты доставки и границы scope |
 | Reference | [Platform support](reference/platform-support.md) | [Поддержка платформ](reference/platform-support_RU.md) | Runners и supported features |
 | Reference | [Transmission presets](reference/presets.md) | [Пресеты передачи](reference/presets_RU.md) | Profile identifiers и назначение |
@@ -16,7 +16,9 @@
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Проверенная работа и ближайшие milestones |
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Граница native facade и проверки WAV в памяти |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Структура generated code и команда повторной генерации |
+| Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Источники дизайна и явные receiver/FEC constraints |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Нормативный wire object и WAV bootstrap carrier |
+| Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Экспериментальный B-FSK carrier и граница compatibility |
 
 ## Правило поддержки перевода
 

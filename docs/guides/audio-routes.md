@@ -9,6 +9,7 @@ An AudioModem route delivers PCM samples. It does not define the data object. Th
 | Route | Delivery model | Bootstrap status | Requirement before “supported” |
 | --- | --- | --- | --- |
 | Lossless WAV | A file carries canonical PCM samples. | Implemented for text round trips and explicit local import/export in the Flutter workbench. | Acoustic interoperability observations across platforms and published fixture compatibility policy. |
+| Controlled Acoustic-1 WAV | A file carries B-FSK PCM samples and the same ADLP v1 wire object. | Experimental: framing, bounded synchronisation, Hamming(7,4), profile-driven symbol windows and golden vector are implemented. | A route adapter plus declared speaker-to-microphone/device measurements. |
 | Speaker → microphone | Local acoustic simplex path. | Planned. | Synchronization, level handling, FEC, noisy-room measurements and device tests. |
 | Audio cable | Line-level PCM path. | Planned. | Device selection, sample-rate handling, gain guidance and cross-platform tests. |
 | OS-managed Bluetooth | A selected audio input/output route. | Planned. | Per-platform permission/routing adapters and device compatibility testing. |
@@ -31,7 +32,7 @@ The adapter relies on `file_picker`, whose documented API supports custom extens
 
 ## Golden compatibility fixture
 
-`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` is a fixed canonical fixture for ADLP v1 WAV bootstrap. Its Rust regression test decodes the fixture and compares the whole fixture byte sequence with a fresh deterministic encoding of the documented input object. Any byte change is therefore a compatibility-affecting codec change and must be reviewed with an updated fixture, hash and protocol rationale.
+`crates/audio-modem-core/tests/fixtures/adlp-v1-text-balanced.wav` is a fixed canonical fixture for ADLP v1 WAV bootstrap. `crates/audio-modem-core/tests/fixtures/acoustic-1-v1-text-balanced.wav` performs the same role for the experimental Acoustic-1 carrier. Their Rust regression tests decode the fixtures and compare whole byte sequences with fresh deterministic encodings of documented input objects. Any byte change is therefore a compatibility-affecting codec change and must be reviewed with an updated fixture, hash and protocol rationale.
 
 ## Callsigns and privacy
 

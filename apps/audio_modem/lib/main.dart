@@ -70,6 +70,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   final _callsign = TextEditingController(text: 'N1');
   final _text = TextEditingController(text: 'Привет через AudioModem');
   TransferPreset _preset = TransferPreset.balanced;
+  CarrierKind _carrier = CarrierKind.bootstrap;
   TransferRoute _route = TransferRoute.wav;
   int _tabIndex = 0;
   bool _isWorking = false;
@@ -77,6 +78,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   WavDecodeResult? _decodedWav;
   String? _activeWavName;
   Uint8List? _activeWavBytes;
+  CarrierKind? _activeCarrier;
   String? _bridgeError;
 
   @override
@@ -108,16 +110,21 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         senderCallsign: _callsign.text.trim(),
         text: _text.text,
         profile: _preset.bridgeProfile,
+        carrier: _carrier.bridgeCarrier,
       );
-      final decoded = await widget.bridge.decodeWav(built.wavBytes);
+      final decoded = await widget.bridge.decodeWav(
+        wavBytes: built.wavBytes,
+        carrier: _carrier.bridgeCarrier,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
         _builtWav = built;
         _decodedWav = decoded;
-        _activeWavName = _suggestedWavName(built.sessionId);
+        _activeWavName = _suggestedWavName(built.sessionId, _carrier);
         _activeWavBytes = built.wavBytes;
+        _activeCarrier = _carrier;
       });
       _showMessage('WAV собран и проверен Rust decoder.');
     } catch (error) {
@@ -135,7 +142,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
 
   Future<void> _verifyCurrentWav() async {
     final wavBytes = _activeWavBytes;
-    if (wavBytes == null) {
+    final carrier = _activeCarrier;
+    if (wavBytes == null || carrier == null) {
       _showMessage('Сначала соберите или импортируйте WAV.');
       return;
     }
@@ -144,7 +152,10 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
       _bridgeError = null;
     });
     try {
-      final decoded = await widget.bridge.decodeWav(wavBytes);
+      final decoded = await widget.bridge.decodeWav(
+        wavBytes: wavBytes,
+        carrier: carrier.bridgeCarrier,
+      );
       if (!mounted) {
         return;
       }
@@ -174,7 +185,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
     });
     try {
       final saved = await widget.fileAdapter.saveWav(
-        suggestedName: _suggestedWavName(built.sessionId),
+        suggestedName: _suggestedWavName(built.sessionId, _carrier),
         bytes: built.wavBytes,
       );
       if (!mounted) {
@@ -215,13 +226,17 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         }
         return;
       }
-      final decoded = await widget.bridge.decodeWav(selected.bytes);
+      final decoded = await widget.bridge.decodeWav(
+        wavBytes: selected.bytes,
+        carrier: _carrier.bridgeCarrier,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
         _activeWavName = selected.name;
         _activeWavBytes = selected.bytes;
+        _activeCarrier = _carrier;
         _decodedWav = decoded;
       });
       _showMessage('WAV импортирован и проверен Rust decoder.');
@@ -240,7 +255,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
     }
   }
 
-  String _suggestedWavName(int sessionId) => 'adlp-$sessionId.wav';
+  String _suggestedWavName(int sessionId, CarrierKind carrier) =>
+      'adlp-${carrier.fileStem}-$sessionId.wav';
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -309,7 +325,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Rust создаёт версионированный ADLP object, кодирует canonical WAV в памяти и сразу декодирует его для проверки целостности.',
+          'Rust создаёт версионированный ADLP object, кодирует выбранный canonical WAV carrier в памяти и сразу декодирует его для проверки целостности.',
         ),
         const SizedBox(height: 28),
         Wrap(
@@ -375,6 +391,30 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                   .toList(),
             ),
             const SizedBox(height: 18),
+            Text('WAV carrier', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: CarrierKind.values
+                  .map(
+                    (carrier) => ChoiceChip(
+                      label: Text(carrier.label),
+                      selected: _carrier == carrier,
+                      onSelected: (_) => setState(() => _carrier = carrier),
+                      tooltip: carrier.description,
+                    ),
+                  )
+                  .toList(),
+            ),
+            if (_carrier == CarrierKind.acoustic1) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Acoustic-1 — экспериментальный PCM carrier для контролируемых WAV tests; это не live-audio маршрут.',
+                style: TextStyle(fontSize: 12, height: 1.4),
+              ),
+            ],
+            const SizedBox(height: 18),
             Text(
               'Маршрут аудио',
               style: Theme.of(context).textTheme.titleSmall,
@@ -414,8 +454,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
             children: [
               const CarrierStrip(),
               const SizedBox(height: 24),
-              const Text(
-                'WAV BOOTSTRAP',
+              Text(
+                _carrier.label.toUpperCase(),
                 style: TextStyle(
                   letterSpacing: 1.4,
                   fontSize: 12,
@@ -433,6 +473,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
               const SizedBox(height: 18),
               Metric(label: 'Контейнер', value: 'ADLP / v1'),
               Metric(label: 'Профиль', value: _preset.profileId),
+              Metric(label: 'Carrier', value: _carrier.label),
               Metric(label: 'Маршрут', value: _route.label),
               Metric(label: 'Текст', value: '$bytes байт UTF-8'),
               const SizedBox(height: 24),
@@ -499,7 +540,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
               ],
               const SizedBox(height: 12),
               const Text(
-                'WAV хранится только в памяти. Export/import file adapter и live audio ещё не реализованы.',
+                'WAV можно экспортировать и импортировать локально. Live audio, cable, Bluetooth и radio adapters ещё не реализованы.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
@@ -565,6 +606,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                   const SizedBox(height: 20),
                   _receiptRow('Позывной', decoded.senderCallsign),
                   _receiptRow('Профиль', decoded.profile),
+                  _receiptRow('Carrier', decoded.carrier),
                   _receiptRow('Текст', decoded.text),
                   _receiptRow(
                     'Семплы',
@@ -619,14 +661,41 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
 }
 
 enum TransferPreset {
-  reliable('Надёжный', 'Acoustic-1/Reliable', 'reliable'),
-  balanced('Сбалансированный', 'Acoustic-1/Balanced', 'balanced'),
-  fast('Быстрый', 'Acoustic-1/Fast', 'fast');
+  reliable('Надёжный', 'ADLP / Reliable', 'reliable'),
+  balanced('Сбалансированный', 'ADLP / Balanced', 'balanced'),
+  fast('Быстрый', 'ADLP / Fast', 'fast');
 
   const TransferPreset(this.label, this.profileId, this.bridgeProfile);
   final String label;
   final String profileId;
   final String bridgeProfile;
+}
+
+enum CarrierKind {
+  bootstrap(
+    'WAV bootstrap',
+    'bootstrap',
+    'bootstrap',
+    'Детерминированный lossless reference carrier.',
+  ),
+  acoustic1(
+    'Acoustic-1',
+    'acoustic1',
+    'acoustic1',
+    'Экспериментальный B-FSK carrier с Hamming FEC для контролируемых WAV tests.',
+  );
+
+  const CarrierKind(
+    this.label,
+    this.bridgeCarrier,
+    this.fileStem,
+    this.description,
+  );
+
+  final String label;
+  final String bridgeCarrier;
+  final String fileStem;
+  final String description;
 }
 
 enum TransferRoute {

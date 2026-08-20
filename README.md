@@ -8,14 +8,15 @@ AudioModem separates a versioned data object from the path that carries its PCM 
 
 ## Status
 
-AudioModem is in the **bootstrap** stage. The verified path is text → ADLP v1 object → lossless WAV → ADLP v1 object → verified text. Live capture/playback, Bluetooth audio routing, radio interfaces, encryption, file payloads in the CLI and release artifacts are **not implemented**. See the [roadmap](docs/roadmap.md) for the intended order of work.
+AudioModem has verified Rust ADLP/WAV codecs, a native Flutter↔Rust bridge, and local WAV import/export. Two controlled WAV carriers are available: deterministic bootstrap and experimental Acoustic-1 B-FSK. The verified paths are text → ADLP v1 object → selected WAV carrier → ADLP v1 object → verified text. Live capture/playback, Bluetooth audio routing, radio interfaces, encryption, application-level file payload workflow and release artifacts are **not implemented**. See the [roadmap](docs/roadmap.md) for the intended order of work.
 
 | Area | Current status | Read more |
 | --- | --- | --- |
 | ADLP v1 container | Implemented and tested in Rust | [Protocol](spec/protocol-v1.md) |
 | Bootstrap WAV codec | Implemented for deterministic 48 kHz mono PCM WAV round trips | [Quick start](docs/guides/getting-started.md) |
-| Flutter client | Cross-platform UI scaffold; no Rust bridge yet | [Platform support](docs/reference/platform-support.md) |
-| Live acoustic modem | Designed, not implemented | [Audio routes](docs/guides/audio-routes.md) |
+| Flutter client | Native Rust bridge plus local WAV import/export; web honestly reports native codec as unavailable | [Bridge architecture](docs/architecture/flutter-rust-bridge.md) |
+| Acoustic-1 carrier | Experimental B-FSK controlled PCM/WAV codec with framing, Hamming(7,4), bounded sync and golden vectors; no live-route claim | [Acoustic-1 RFC](spec/acoustic-1.md) |
+| Live acoustic modem | Not implemented: no capture/playback route adapter or device acceptance result | [Audio routes](docs/guides/audio-routes.md) |
 | Encryption and verified identity | Future RFC work | [Security](SECURITY.md) |
 
 ## Quick start: a reproducible WAV round trip
@@ -29,6 +30,13 @@ cargo run -p adlp-cli -- decode hello.wav
 
 The command writes a lossless mono 48 kHz, signed 16-bit PCM WAV file and decodes the same object. This bootstrap symbol mapper is deliberately simple; it is **not** a robust over-the-air modulation scheme. The [quick-start guide](docs/guides/getting-started.md) explains the guarantee and its limits.
 
+For a controlled experiment with the separate experimental carrier, use the explicit Acoustic-1 commands. A successful WAV round trip proves only this codec contract; it does not demonstrate a speaker-to-microphone link.
+
+```bash
+cargo run -p adlp-cli -- encode-acoustic1-text acoustic1.wav N1 "Controlled test" balanced
+cargo run -p adlp-cli -- decode-acoustic1 acoustic1.wav
+```
+
 ## Documentation
 
 | English (canonical) | Russian translation | Purpose |
@@ -37,6 +45,7 @@ The command writes a lossless mono 48 kHz, signed 16-bit PCM WAV file and decode
 | [Quick start](docs/guides/getting-started.md) | [Быстрый старт](docs/guides/getting-started_RU.md) | Reproducible WAV workflow |
 | [Audio routes](docs/guides/audio-routes.md) | [Аудиомаршруты](docs/guides/audio-routes_RU.md) | WAV, live PCM, cable, radio and Bluetooth boundaries |
 | [Protocol v1](spec/protocol-v1.md) | [Протокол v1](spec/protocol-v1_RU.md) | ADLP object and bootstrap WAV carrier |
+| [Acoustic-1 RFC](spec/acoustic-1.md) | [Acoustic-1 RFC на русском](spec/acoustic-1_RU.md) | Experimental B-FSK carrier and compatibility boundary |
 | [Platform support](docs/reference/platform-support.md) | [Поддержка платформ](docs/reference/platform-support_RU.md) | Target runners and feature status |
 | [Transmission presets](docs/reference/presets.md) | [Пресеты передачи](docs/reference/presets_RU.md) | Reliable, Balanced, Fast and Narrowband IDs |
 | [Troubleshooting](docs/troubleshooting.md) | [Диагностика](docs/troubleshooting_RU.md) | Observable failures and useful reports |

@@ -1,12 +1,12 @@
 # Quick start: verify a WAV transfer
 
-**Last reviewed:** 2026-08-19 · **English (canonical)** · [Русский](getting-started_RU.md)
+**Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](getting-started_RU.md)
 
 This guide verifies the first implemented AudioModem path. It does not test a speaker, microphone, Bluetooth device or radio. It deliberately uses a lossless WAV file so a failed round trip can be assigned to the container or codec rather than to an unknown live-audio route.
 
 ## Prerequisites
 
-Install a stable Rust toolchain and clone the repository. The current Flutter UI is not connected to the Rust core yet, so the diagnostic CLI is the supported entry point for this test.
+Install a stable Rust toolchain and clone the repository. The native Flutter UI now uses the same Rust core and can locally save or open WAV files, but the diagnostic CLI remains the most direct reproducible entry point for this test. The web build intentionally does not expose the native codec.
 
 ```bash
 git clone https://github.com/matveyb9/AudioModem.git
@@ -34,14 +34,25 @@ cargo run -p adlp-cli -- decode hello.wav
 
 The decoder prints the ADLP version, profile, session value, callsign, sample count and text. A decoder must reject malformed bootstrap framing or a CRC-32C mismatch before it returns the payload.
 
+## Controlled Acoustic-1 WAV experiment
+
+Acoustic-1 is a separate experimental B-FSK carrier. It uses a different encoder and decoder, so both commands must name the carrier explicitly. Its framing, bounded synchronisation, Hamming(7,4) layer and limits are defined in the [Acoustic-1 RFC](../../spec/acoustic-1.md).
+
+```bash
+cargo run -p adlp-cli -- encode-acoustic1-text acoustic1.wav N1 "Controlled test" balanced
+cargo run -p adlp-cli -- decode-acoustic1 acoustic1.wav
+```
+
+An Acoustic-1 WAV round trip proves controlled PCM/WAV codec behavior only. It does not prove speaker-to-microphone synchronisation, room-noise tolerance, gain handling, radio compatibility or any live route.
+
 ## What this proves—and what it does not
 
 | This test proves | This test does not prove |
 | --- | --- |
 | The implemented ADLP v1 object can survive one deterministic WAV encode/decode cycle. | That speech-band audio, a speaker, microphone, cable, Bluetooth adapter or radio can carry the waveform. |
-| The final integrity check detects the intentional corrupted-frame cases covered by the Rust tests. | That a callsign belongs to a person, device or key. |
+| The final integrity check detects the intentional corrupted-frame cases covered by the Rust tests; Acoustic-1 also has bounded noise, framing, FEC and golden-vector regression cases. | That a callsign belongs to a person, device or key. |
 | The test is portable between supported Rust development environments. | That a transmission is encrypted, confidential or authenticated. |
 
 ## Next steps
 
-Read [Audio routes](audio-routes.md) to understand why WAV is the reference transport and what is required before a live route becomes supported. Read the [ADLP v1 specification](../../spec/protocol-v1.md) for the object layout.
+Read [Audio routes](audio-routes.md) to understand why WAV is the reference transport and what is required before a live route becomes supported. Read the [ADLP v1 specification](../../spec/protocol-v1.md) for the object layout and the [Acoustic-1 RFC](../../spec/acoustic-1.md) for experimental carrier compatibility.

@@ -6,7 +6,7 @@ This directory holds the human-readable technical documentation for AudioModem. 
 
 | Section | English | Russian | Scope |
 | --- | --- | --- | --- |
-| Guides | [Quick start](guides/getting-started.md) | [Быстрый старт](guides/getting-started_RU.md) | Verified text-to-WAV round trip |
+| Guides | [Quick start](guides/getting-started.md) | [Быстрый старт](guides/getting-started_RU.md) | Verified bootstrap and controlled Acoustic-1 WAV workflows |
 | Guides | [Audio routes](guides/audio-routes.md) | [Аудиомаршруты](guides/audio-routes_RU.md) | Delivery routes and scope boundaries |
 | Reference | [Platform support](reference/platform-support.md) | [Поддержка платформ](reference/platform-support_RU.md) | Runners versus supported features |
 | Reference | [Transmission presets](reference/presets.md) | [Пресеты передачи](reference/presets_RU.md) | Profile identifiers and intent |
@@ -14,7 +14,9 @@ This directory holds the human-readable technical documentation for AudioModem. 
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Verified work and upcoming milestones |
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Native facade and in-memory WAV verification boundary |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Generated-code layout and regeneration command |
+| Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Design sources and explicit receiver/FEC constraints |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Normative wire object and WAV bootstrap carrier |
+| Specification | [Acoustic-1](../spec/acoustic-1.md) | [Acoustic-1 на русском](../spec/acoustic-1_RU.md) | Experimental B-FSK carrier and compatibility boundary |
 
 ## Translation convention
 

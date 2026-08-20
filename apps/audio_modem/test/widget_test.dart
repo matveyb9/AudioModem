@@ -7,19 +7,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeWavBridge implements WavBootstrapBridge {
+  String? encodedCarrier;
+  String? decodedCarrier;
+
   @override
   bool get isAvailable => true;
 
   @override
-  Future<WavDecodeResult> decodeWav(Uint8List wavBytes) async =>
-      const WavDecodeResult(
-        sessionId: 7,
-        senderCallsign: 'N1',
-        profile: 'fast',
-        text: 'Привет через AudioModem',
-        sampleRateHz: 48000,
-        samplesConsumed: 512,
-      );
+  Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  }) async {
+    decodedCarrier = carrier;
+    return WavDecodeResult(
+      sessionId: 7,
+      senderCallsign: 'N1',
+      profile: 'fast',
+      carrier: carrier,
+      text: 'Привет через AudioModem',
+      sampleRateHz: 48000,
+      samplesConsumed: 512,
+    );
+  }
 
   @override
   Future<WavBuildResult> encodeText({
@@ -27,12 +36,17 @@ class _FakeWavBridge implements WavBootstrapBridge {
     required String senderCallsign,
     required String text,
     required String profile,
-  }) async => WavBuildResult(
-    sessionId: sessionId,
-    profile: profile,
-    sampleRateHz: 48000,
-    wavBytes: Uint8List.fromList([82, 73, 70, 70]),
-  );
+    required String carrier,
+  }) async {
+    encodedCarrier = carrier;
+    return WavBuildResult(
+      sessionId: sessionId,
+      profile: profile,
+      carrier: carrier,
+      sampleRateHz: 48000,
+      wavBytes: Uint8List.fromList([82, 73, 70, 70]),
+    );
+  }
 }
 
 class _FakeWavFileAdapter implements WavFileAdapter {
@@ -62,8 +76,9 @@ void main() {
     tester,
   ) async {
     final fileAdapter = _FakeWavFileAdapter();
+    final bridge = _FakeWavBridge();
     await tester.pumpWidget(
-      AudioModemApp(bridge: _FakeWavBridge(), fileAdapter: fileAdapter),
+      AudioModemApp(bridge: bridge, fileAdapter: fileAdapter),
     );
 
     expect(find.text('Соберите и проверьте WAV.'), findsOneWidget);
@@ -77,6 +92,11 @@ void main() {
     final fastPreset = tester.widget<ChoiceChip>(fastFinder);
     expect(fastPreset.selected, isTrue);
 
+    final acousticFinder = find.widgetWithText(ChoiceChip, 'Acoustic-1');
+    await tester.ensureVisible(acousticFinder);
+    await tester.tap(acousticFinder);
+    await tester.pumpAndSettle();
+
     final buildButton = find.widgetWithText(
       FilledButton,
       'Собрать и проверить WAV',
@@ -87,6 +107,8 @@ void main() {
 
     expect(find.text('ПРОВЕРЕНО RUST'), findsOneWidget);
     expect(find.text('4 байт'), findsOneWidget);
+    expect(bridge.encodedCarrier, 'acoustic1');
+    expect(bridge.decodedCarrier, 'acoustic1');
 
     final exportButton = find.widgetWithText(
       OutlinedButton,
@@ -96,7 +118,7 @@ void main() {
     await tester.tap(exportButton);
     await tester.pumpAndSettle();
 
-    expect(fileAdapter.savedFile?.name, startsWith('adlp-'));
+    expect(fileAdapter.savedFile?.name, startsWith('adlp-acoustic1-'));
   });
 
   testWidgets('receive workbench imports and verifies a user-selected WAV', (

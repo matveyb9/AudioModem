@@ -1,10 +1,10 @@
 # ADLP v1: bootstrap container and WAV transport
 
-**Status:** Experimental. This document defines a deterministic bootstrap path for automated tests and lossless WAV exchange. It is not yet an over-the-air acoustic PHY specification.
+**Status:** Experimental. This document defines the ADLP v1 wire object and deterministic bootstrap path for automated tests and lossless WAV exchange. It is not an over-the-air acoustic PHY specification; the separate [Acoustic-1 experimental carrier](acoustic-1.md) has its own controlled-test scope.
 
 ## Layering
 
-`TransferManifest + payload` are encoded into an ADLP wire object. The bootstrap codec maps this object to mono 48 kHz, 16-bit PCM WAV. Future `Acoustic-1` modulation replaces the bootstrap symbol mapper, not the wire object.
+`TransferManifest + payload` are encoded into an ADLP wire object. The bootstrap codec maps this object to mono 48 kHz, 16-bit PCM WAV. The separate `Acoustic-1` codec also carries this unchanged wire object and replaces only the symbol mapper, not the ADLP bytes.
 
 ## ADLP wire object
 

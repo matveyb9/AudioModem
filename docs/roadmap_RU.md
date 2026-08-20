@@ -2,7 +2,7 @@
 
 [English (canonical)](roadmap.md) · **Русский перевод**
 
-> **Translation of:** [docs/roadmap.md](roadmap.md). **Last synced:** 2026-08-19.
+> **Translation of:** [docs/roadmap.md](roadmap.md). **Last synced:** 2026-08-20.
 
 Эта дорожная карта описывает intended order, а не даты или гарантированные сроки. Она отделяет verified repository state от research и planned product capability.
 
@@ -10,9 +10,9 @@
 | --- | --- | --- |
 | GitHub-first bootstrap | Завершён | Public repository policy, issue forms, CI workflows, protected main и static-site workflow. |
 | ADLP v1 и WAV reference | Завершён | Rust container, CRC-32C, deterministic PCM/WAV round trip, CLI и initial specification. |
-| Flutter ↔ Rust bridge | Следующий | Flutter UI вызывает реальные ADLP/WAV encode и decode operations через reviewed bridge. |
-| File object workflow | Планируется | Выбор файла, сохранение MIME/name metadata, encode/decode и integrity verification. |
-| Acoustic-1 | Планируется | Framing, synchronization, FEC, profile behavior, measurements и golden vectors для speaker-to-microphone. |
+| Flutter ↔ Rust bridge | Завершён | Native UI вызывает reviewed Rust ADLP/WAV encode/decode; web сообщает, что native codec недоступен. |
+| Локальный WAV file workflow | Завершён | User-selected save/open dialogs экспортируют/импортируют проверенные WAV bytes; file-object payloads остаются будущей работой. |
+| Acoustic-1 | Экспериментальный controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols и golden vectors существуют для PCM/WAV tests; speaker-to-microphone claim отсутствует. |
 | Audio adapters | Планируется | Capture/playback, cable, Bluetooth и radio-interface adapters с per-platform acceptance tests. |
 | Trust и encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX и independent security review. |
 | Release engineering | Планируется | Signed packages, compatibility matrix, changelog, SBOM/checksums и clear support policy. |

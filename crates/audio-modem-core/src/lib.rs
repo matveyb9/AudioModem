@@ -4,6 +4,8 @@
 //! between the ADLP container and a lossless audio transport. A future DSP
 //! profile can replace this simple symbol mapper without changing ADLP bytes.
 
+pub mod acoustic1;
+
 use std::fmt;
 
 use adlp_protocol::{ProtocolError, WireObject};
@@ -69,11 +71,11 @@ pub fn encode_wav(object: &WireObject) -> Result<Vec<u8>, CodecError> {
     for byte in wire {
         push_byte(&mut samples, byte);
     }
-    make_wav(&samples)
+    make_canonical_wav(&samples)
 }
 
 pub fn decode_wav(wav: &[u8]) -> Result<DecodedTransfer, CodecError> {
-    let (sample_rate_hz, samples) = parse_wav(wav)?;
+    let (sample_rate_hz, samples) = parse_canonical_wav(wav)?;
     if sample_rate_hz != SAMPLE_RATE_HZ {
         return Err(CodecError::InvalidWav("sample rate must be 48 kHz"));
     }
@@ -124,7 +126,7 @@ fn push_u32(samples: &mut Vec<i16>, value: u32) {
     }
 }
 
-fn make_wav(samples: &[i16]) -> Result<Vec<u8>, CodecError> {
+pub(crate) fn make_canonical_wav(samples: &[i16]) -> Result<Vec<u8>, CodecError> {
     let data_len = samples
         .len()
         .checked_mul(2)
@@ -154,7 +156,7 @@ fn make_wav(samples: &[i16]) -> Result<Vec<u8>, CodecError> {
     Ok(wav)
 }
 
-fn parse_wav(wav: &[u8]) -> Result<(u32, Vec<i16>), CodecError> {
+pub(crate) fn parse_canonical_wav(wav: &[u8]) -> Result<(u32, Vec<i16>), CodecError> {
     if wav.len() < 44 || &wav[0..4] != b"RIFF" || &wav[8..12] != b"WAVE" {
         return Err(CodecError::InvalidWav("expected RIFF/WAVE header"));
     }
