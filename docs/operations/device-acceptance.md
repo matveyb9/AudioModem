@@ -48,6 +48,8 @@ The [Android foreground live-audio adapter RFC](../../spec/android-live-audio-ad
 
 This extension is deliberately narrow. It neither permits an unexecuted template to include device/evidence fields nor changes requirements for every other route. It rejects an Android observation with a mismatched effective format or any value that would imply raw audio retention or auto-resume.
 
+Use the [Android device-acceptance runbook](android-device-acceptance-runbook.md) for the tester procedure. It maps contextual permission, focus, interruption, lifecycle and privacy observations to this schema without treating a procedure or valid JSON as a route-support claim.
+
 ```bash
 node tools/device-acceptance/validate-report.mjs \
   tools/device-acceptance/fixtures/android-speaker-microphone-template-v1.json

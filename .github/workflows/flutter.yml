@@ -34,6 +34,8 @@ jobs:
       - name: Check formatting
         working-directory: apps/audio_modem
         run: dart format --output=none --set-exit-if-changed lib test
+      - name: Check Android source contracts
+        run: node tools/device-acceptance/test-android-source-contracts.mjs
       - name: Analyze
         working-directory: apps/audio_modem
         run: flutter analyze
@@ -46,3 +48,43 @@ jobs:
       - name: Build Linux debug
         working-directory: apps/audio_modem
         run: flutter build linux --debug
+
+  android-build:
+    name: Build Android debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android API 36, build tools and Flutter-compatible NDK
+        run: |
+          sdkmanager --install \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;28.2.13676358"
+      - name: Fetch Flutter stable
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Install stable Rust and Android targets for Cargokit
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add \
+            armv7-linux-androideabi \
+            aarch64-linux-android \
+            i686-linux-android \
+            x86_64-linux-android
+      - name: Disable Flutter telemetry
+        run: flutter --disable-analytics
+      - name: Install dependencies
+        working-directory: apps/audio_modem
+        run: flutter pub get
+      - name: Build Android debug APK
+        working-directory: apps/audio_modem
+        run: flutter build apk --debug --no-pub
