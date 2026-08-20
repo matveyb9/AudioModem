@@ -1,8 +1,11 @@
-//! Typed WAV bootstrap API: user text and callsign in, verified ADLP metadata out.
+//! Typed WAV carrier API: user text and callsign in, verified ADLP metadata out.
 //! No live device, encryption, identity verification or file-object workflow is exposed here.
 
 use adlp_protocol::{ObjectKind, TransferProfile, WireObject};
-use audio_modem_core::{decode_wav, encode_wav, SAMPLE_RATE_HZ};
+use audio_modem_core::{
+    acoustic1, decode_wav as decode_bootstrap_wav, encode_wav as encode_bootstrap_wav,
+    SAMPLE_RATE_HZ,
+};
 
 const MAX_BRIDGE_TEXT_BYTES: usize = 8 * 1024;
 
@@ -10,6 +13,7 @@ const MAX_BRIDGE_TEXT_BYTES: usize = 8 * 1024;
 pub struct EncodedWavTransfer {
     pub session_id: u64,
     pub profile: String,
+    pub carrier: String,
     pub sample_rate_hz: u32,
     pub wav_bytes: Vec<u8>,
 }
@@ -19,52 +23,78 @@ pub struct DecodedTextTransfer {
     pub session_id: u64,
     pub sender_callsign: String,
     pub profile: String,
+    pub carrier: String,
     pub text: String,
     pub sample_rate_hz: u32,
     pub samples_consumed: u32,
 }
 
-/// Encodes one text-only ADLP object into canonical 48 kHz mono 16-bit PCM WAV bytes.
+/// Encodes one text-only ADLP object into a selected canonical 48 kHz WAV carrier.
 pub fn encode_text_to_wav(
     session_id: u64,
     sender_callsign: String,
     text: String,
     profile: String,
+    carrier: String,
 ) -> Result<EncodedWavTransfer, String> {
     if session_id == 0 {
         return Err("session_id must be positive".to_owned());
     }
     if text.len() > MAX_BRIDGE_TEXT_BYTES {
-        return Err("text exceeds the 8 KiB WAV bootstrap application limit".to_owned());
+        return Err("text exceeds the 8 KiB WAV carrier application limit".to_owned());
     }
     let profile = parse_profile(&profile)?;
+    let carrier = parse_carrier(&carrier)?;
     let object = WireObject::text(session_id, sender_callsign, text, profile)
         .map_err(|error| error.to_string())?;
-    let wav_bytes = encode_wav(&object).map_err(|error| error.to_string())?;
+    let wav_bytes = match carrier {
+        Carrier::Bootstrap => encode_bootstrap_wav(&object).map_err(|error| error.to_string())?,
+        Carrier::Acoustic1 => acoustic1::encode_wav(&object).map_err(|error| error.to_string())?,
+    };
     Ok(EncodedWavTransfer {
         session_id,
         profile: profile.as_str().to_owned(),
+        carrier: carrier.as_str().to_owned(),
         sample_rate_hz: SAMPLE_RATE_HZ,
         wav_bytes,
     })
 }
 
-/// Decodes and verifies canonical WAV bytes before exposing text metadata to Flutter.
-pub fn decode_wav_text(wav_bytes: Vec<u8>) -> Result<DecodedTextTransfer, String> {
-    let decoded = decode_wav(&wav_bytes).map_err(|error| error.to_string())?;
-    if decoded.object.manifest.object_kind != ObjectKind::Text {
+/// Decodes and verifies selected-carrier WAV bytes before exposing text metadata to Flutter.
+pub fn decode_wav_text(wav_bytes: Vec<u8>, carrier: String) -> Result<DecodedTextTransfer, String> {
+    let carrier = parse_carrier(&carrier)?;
+    let (object, sample_rate_hz, samples_consumed) = match carrier {
+        Carrier::Bootstrap => {
+            let decoded = decode_bootstrap_wav(&wav_bytes).map_err(|error| error.to_string())?;
+            (
+                decoded.object,
+                decoded.sample_rate_hz,
+                decoded.samples_consumed,
+            )
+        }
+        Carrier::Acoustic1 => {
+            let decoded = acoustic1::decode_wav(&wav_bytes).map_err(|error| error.to_string())?;
+            (
+                decoded.object,
+                decoded.sample_rate_hz,
+                decoded.samples_consumed,
+            )
+        }
+    };
+    if object.manifest.object_kind != ObjectKind::Text {
         return Err("the WAV contains a non-text ADLP object".to_owned());
     }
-    let text = String::from_utf8(decoded.object.payload)
+    let text = String::from_utf8(object.payload)
         .map_err(|_| "the ADLP text payload is not valid UTF-8".to_owned())?;
-    let samples_consumed = u32::try_from(decoded.samples_consumed)
+    let samples_consumed = u32::try_from(samples_consumed)
         .map_err(|_| "decoded sample count exceeds bridge return range".to_owned())?;
     Ok(DecodedTextTransfer {
-        session_id: decoded.object.manifest.session_id,
-        sender_callsign: decoded.object.manifest.sender_callsign,
-        profile: decoded.object.manifest.profile.as_str().to_owned(),
+        session_id: object.manifest.session_id,
+        sender_callsign: object.manifest.sender_callsign,
+        profile: object.manifest.profile.as_str().to_owned(),
+        carrier: carrier.as_str().to_owned(),
         text,
-        sample_rate_hz: decoded.sample_rate_hz,
+        sample_rate_hz,
         samples_consumed,
     })
 }
@@ -79,34 +109,98 @@ fn parse_profile(value: &str) -> Result<TransferProfile, String> {
     }
 }
 
+#[derive(Clone, Copy)]
+enum Carrier {
+    Bootstrap,
+    Acoustic1,
+}
+
+impl Carrier {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Bootstrap => "bootstrap",
+            Self::Acoustic1 => "acoustic1",
+        }
+    }
+}
+
+fn parse_carrier(value: &str) -> Result<Carrier, String> {
+    match value {
+        "bootstrap" => Ok(Carrier::Bootstrap),
+        "acoustic1" => Ok(Carrier::Acoustic1),
+        _ => Err("carrier must be bootstrap or acoustic1".to_owned()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn bridge_round_trip_preserves_text_metadata() {
+    fn bridge_round_trip_preserves_bootstrap_text_metadata() {
         let encoded = encode_text_to_wav(
             7,
             "N1".to_owned(),
             "Hello from Flutter".to_owned(),
             "balanced".to_owned(),
+            "bootstrap".to_owned(),
         )
         .unwrap();
-        let decoded = decode_wav_text(encoded.wav_bytes).unwrap();
+        let decoded = decode_wav_text(encoded.wav_bytes, "bootstrap".to_owned()).unwrap();
         assert_eq!(decoded.session_id, 7);
         assert_eq!(decoded.sender_callsign, "N1");
         assert_eq!(decoded.profile, "balanced");
+        assert_eq!(decoded.carrier, "bootstrap");
         assert_eq!(decoded.text, "Hello from Flutter");
         assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
     }
 
     #[test]
     fn bridge_rejects_zero_session_and_unknown_profile() {
-        assert!(
-            encode_text_to_wav(0, "N1".to_owned(), "x".to_owned(), "balanced".to_owned()).is_err()
-        );
-        assert!(
-            encode_text_to_wav(1, "N1".to_owned(), "x".to_owned(), "turbo".to_owned()).is_err()
-        );
+        assert!(encode_text_to_wav(
+            0,
+            "N1".to_owned(),
+            "x".to_owned(),
+            "balanced".to_owned(),
+            "bootstrap".to_owned(),
+        )
+        .is_err());
+        assert!(encode_text_to_wav(
+            1,
+            "N1".to_owned(),
+            "x".to_owned(),
+            "turbo".to_owned(),
+            "bootstrap".to_owned(),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn bridge_round_trips_experimental_acoustic1_metadata() {
+        let encoded = encode_text_to_wav(
+            8,
+            "AC1".to_owned(),
+            "Controlled carrier".to_owned(),
+            "fast".to_owned(),
+            "acoustic1".to_owned(),
+        )
+        .unwrap();
+        let decoded = decode_wav_text(encoded.wav_bytes, "acoustic1".to_owned()).unwrap();
+        assert_eq!(decoded.session_id, 8);
+        assert_eq!(decoded.profile, "fast");
+        assert_eq!(decoded.carrier, "acoustic1");
+    }
+
+    #[test]
+    fn bridge_rejects_an_acoustic1_wav_with_bootstrap_decoder() {
+        let encoded = encode_text_to_wav(
+            9,
+            "AC1".to_owned(),
+            "Carrier contract".to_owned(),
+            "balanced".to_owned(),
+            "acoustic1".to_owned(),
+        )
+        .unwrap();
+        assert!(decode_wav_text(encoded.wav_bytes, "bootstrap".to_owned()).is_err());
     }
 }

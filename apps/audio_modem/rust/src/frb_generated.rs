@@ -69,10 +69,12 @@ fn wire__crate__api__wav_bootstrap__decode_wav_text_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_wav_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_carrier = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::wav_bootstrap::decode_wav_text(api_wav_bytes)?;
+                    let output_ok =
+                        crate::api::wav_bootstrap::decode_wav_text(api_wav_bytes, api_carrier)?;
                     Ok(output_ok)
                 })())
             }
@@ -105,6 +107,7 @@ fn wire__crate__api__wav_bootstrap__encode_text_to_wav_impl(
             let api_sender_callsign = <String>::sse_decode(&mut deserializer);
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_profile = <String>::sse_decode(&mut deserializer);
+            let api_carrier = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
@@ -113,6 +116,7 @@ fn wire__crate__api__wav_bootstrap__encode_text_to_wav_impl(
                         api_sender_callsign,
                         api_text,
                         api_profile,
+                        api_carrier,
                     )?;
                     Ok(output_ok)
                 })())
@@ -137,6 +141,7 @@ impl SseDecode for crate::api::wav_bootstrap::DecodedTextTransfer {
         let mut var_sessionId = <u64>::sse_decode(deserializer);
         let mut var_senderCallsign = <String>::sse_decode(deserializer);
         let mut var_profile = <String>::sse_decode(deserializer);
+        let mut var_carrier = <String>::sse_decode(deserializer);
         let mut var_text = <String>::sse_decode(deserializer);
         let mut var_sampleRateHz = <u32>::sse_decode(deserializer);
         let mut var_samplesConsumed = <u32>::sse_decode(deserializer);
@@ -144,6 +149,7 @@ impl SseDecode for crate::api::wav_bootstrap::DecodedTextTransfer {
             session_id: var_sessionId,
             sender_callsign: var_senderCallsign,
             profile: var_profile,
+            carrier: var_carrier,
             text: var_text,
             sample_rate_hz: var_sampleRateHz,
             samples_consumed: var_samplesConsumed,
@@ -156,11 +162,13 @@ impl SseDecode for crate::api::wav_bootstrap::EncodedWavTransfer {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_sessionId = <u64>::sse_decode(deserializer);
         let mut var_profile = <String>::sse_decode(deserializer);
+        let mut var_carrier = <String>::sse_decode(deserializer);
         let mut var_sampleRateHz = <u32>::sse_decode(deserializer);
         let mut var_wavBytes = <Vec<u8>>::sse_decode(deserializer);
         return crate::api::wav_bootstrap::EncodedWavTransfer {
             session_id: var_sessionId,
             profile: var_profile,
+            carrier: var_carrier,
             sample_rate_hz: var_sampleRateHz,
             wav_bytes: var_wavBytes,
         };
@@ -257,6 +265,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::wav_bootstrap::DecodedTextTra
             self.session_id.into_into_dart().into_dart(),
             self.sender_callsign.into_into_dart().into_dart(),
             self.profile.into_into_dart().into_dart(),
+            self.carrier.into_into_dart().into_dart(),
             self.text.into_into_dart().into_dart(),
             self.sample_rate_hz.into_into_dart().into_dart(),
             self.samples_consumed.into_into_dart().into_dart(),
@@ -281,6 +290,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::wav_bootstrap::EncodedWavTran
         [
             self.session_id.into_into_dart().into_dart(),
             self.profile.into_into_dart().into_dart(),
+            self.carrier.into_into_dart().into_dart(),
             self.sample_rate_hz.into_into_dart().into_dart(),
             self.wav_bytes.into_into_dart().into_dart(),
         ]
@@ -312,6 +322,7 @@ impl SseEncode for crate::api::wav_bootstrap::DecodedTextTransfer {
         <u64>::sse_encode(self.session_id, serializer);
         <String>::sse_encode(self.sender_callsign, serializer);
         <String>::sse_encode(self.profile, serializer);
+        <String>::sse_encode(self.carrier, serializer);
         <String>::sse_encode(self.text, serializer);
         <u32>::sse_encode(self.sample_rate_hz, serializer);
         <u32>::sse_encode(self.samples_consumed, serializer);
@@ -323,6 +334,7 @@ impl SseEncode for crate::api::wav_bootstrap::EncodedWavTransfer {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <u64>::sse_encode(self.session_id, serializer);
         <String>::sse_encode(self.profile, serializer);
+        <String>::sse_encode(self.carrier, serializer);
         <u32>::sse_encode(self.sample_rate_hz, serializer);
         <Vec<u8>>::sse_encode(self.wav_bytes, serializer);
     }

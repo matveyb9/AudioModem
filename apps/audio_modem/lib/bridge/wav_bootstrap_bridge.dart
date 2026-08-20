@@ -9,12 +9,14 @@ class WavBuildResult {
   const WavBuildResult({
     required this.sessionId,
     required this.profile,
+    required this.carrier,
     required this.sampleRateHz,
     required this.wavBytes,
   });
 
   final int sessionId;
   final String profile;
+  final String carrier;
   final int sampleRateHz;
   final Uint8List wavBytes;
 }
@@ -24,6 +26,7 @@ class WavDecodeResult {
     required this.sessionId,
     required this.senderCallsign,
     required this.profile,
+    required this.carrier,
     required this.text,
     required this.sampleRateHz,
     required this.samplesConsumed,
@@ -32,6 +35,7 @@ class WavDecodeResult {
   final int sessionId;
   final String senderCallsign;
   final String profile;
+  final String carrier;
   final String text;
   final int sampleRateHz;
   final int samplesConsumed;
@@ -45,9 +49,13 @@ abstract interface class WavBootstrapBridge {
     required String senderCallsign,
     required String text,
     required String profile,
+    required String carrier,
   });
 
-  Future<WavDecodeResult> decodeWav(Uint8List wavBytes);
+  Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  });
 }
 
 class NativeWavBootstrapBridge implements WavBootstrapBridge {
@@ -72,28 +80,38 @@ class NativeWavBootstrapBridge implements WavBootstrapBridge {
     required String senderCallsign,
     required String text,
     required String profile,
+    required String carrier,
   }) async {
     final result = await rust.encodeTextToWav(
       sessionId: sessionId,
       senderCallsign: senderCallsign,
       text: text,
       profile: profile,
+      carrier: carrier,
     );
     return WavBuildResult(
       sessionId: result.sessionId,
       profile: result.profile,
+      carrier: result.carrier,
       sampleRateHz: result.sampleRateHz,
       wavBytes: result.wavBytes,
     );
   }
 
   @override
-  Future<WavDecodeResult> decodeWav(Uint8List wavBytes) async {
-    final result = await rust.decodeWavText(wavBytes: wavBytes);
+  Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  }) async {
+    final result = await rust.decodeWavText(
+      wavBytes: wavBytes,
+      carrier: carrier,
+    );
     return WavDecodeResult(
       sessionId: result.sessionId,
       senderCallsign: result.senderCallsign,
       profile: result.profile,
+      carrier: result.carrier,
       text: result.text,
       sampleRateHz: result.sampleRateHz,
       samplesConsumed: result.samplesConsumed,
@@ -115,9 +133,12 @@ class UnavailableWavBootstrapBridge implements WavBootstrapBridge {
     required String senderCallsign,
     required String text,
     required String profile,
+    required String carrier,
   }) => Future.error(StateError(reason));
 
   @override
-  Future<WavDecodeResult> decodeWav(Uint8List wavBytes) =>
-      Future.error(StateError(reason));
+  Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  }) => Future.error(StateError(reason));
 }

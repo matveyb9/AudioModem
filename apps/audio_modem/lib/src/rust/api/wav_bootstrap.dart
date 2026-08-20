@@ -7,32 +7,39 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `parse_profile`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
+// These functions are ignored because they are not marked as `pub`: `as_str`, `parse_carrier`, `parse_profile`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Carrier`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`
 
-/// Encodes one text-only ADLP object into canonical 48 kHz mono 16-bit PCM WAV bytes.
+/// Encodes one text-only ADLP object into a selected canonical 48 kHz WAV carrier.
 Future<EncodedWavTransfer> encodeTextToWav({
   required int sessionId,
   required String senderCallsign,
   required String text,
   required String profile,
+  required String carrier,
 }) => AudioModemRust.instance.api.crateApiWavBootstrapEncodeTextToWav(
   sessionId: sessionId,
   senderCallsign: senderCallsign,
   text: text,
   profile: profile,
+  carrier: carrier,
 );
 
-/// Decodes and verifies canonical WAV bytes before exposing text metadata to Flutter.
-Future<DecodedTextTransfer> decodeWavText({required List<int> wavBytes}) =>
-    AudioModemRust.instance.api.crateApiWavBootstrapDecodeWavText(
-      wavBytes: wavBytes,
-    );
+/// Decodes and verifies selected-carrier WAV bytes before exposing text metadata to Flutter.
+Future<DecodedTextTransfer> decodeWavText({
+  required List<int> wavBytes,
+  required String carrier,
+}) => AudioModemRust.instance.api.crateApiWavBootstrapDecodeWavText(
+  wavBytes: wavBytes,
+  carrier: carrier,
+);
 
 class DecodedTextTransfer {
   final int sessionId;
   final String senderCallsign;
   final String profile;
+  final String carrier;
   final String text;
   final int sampleRateHz;
   final int samplesConsumed;
@@ -41,6 +48,7 @@ class DecodedTextTransfer {
     required this.sessionId,
     required this.senderCallsign,
     required this.profile,
+    required this.carrier,
     required this.text,
     required this.sampleRateHz,
     required this.samplesConsumed,
@@ -51,6 +59,7 @@ class DecodedTextTransfer {
       sessionId.hashCode ^
       senderCallsign.hashCode ^
       profile.hashCode ^
+      carrier.hashCode ^
       text.hashCode ^
       sampleRateHz.hashCode ^
       samplesConsumed.hashCode;
@@ -63,6 +72,7 @@ class DecodedTextTransfer {
           sessionId == other.sessionId &&
           senderCallsign == other.senderCallsign &&
           profile == other.profile &&
+          carrier == other.carrier &&
           text == other.text &&
           sampleRateHz == other.sampleRateHz &&
           samplesConsumed == other.samplesConsumed;
@@ -71,12 +81,14 @@ class DecodedTextTransfer {
 class EncodedWavTransfer {
   final int sessionId;
   final String profile;
+  final String carrier;
   final int sampleRateHz;
   final Uint8List wavBytes;
 
   const EncodedWavTransfer({
     required this.sessionId,
     required this.profile,
+    required this.carrier,
     required this.sampleRateHz,
     required this.wavBytes,
   });
@@ -85,6 +97,7 @@ class EncodedWavTransfer {
   int get hashCode =>
       sessionId.hashCode ^
       profile.hashCode ^
+      carrier.hashCode ^
       sampleRateHz.hashCode ^
       wavBytes.hashCode;
 
@@ -95,6 +108,7 @@ class EncodedWavTransfer {
           runtimeType == other.runtimeType &&
           sessionId == other.sessionId &&
           profile == other.profile &&
+          carrier == other.carrier &&
           sampleRateHz == other.sampleRateHz &&
           wavBytes == other.wavBytes;
 }
