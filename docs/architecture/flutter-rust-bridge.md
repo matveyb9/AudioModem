@@ -1,8 +1,8 @@
 # Flutter ↔ Rust WAV bridge
 
-**Last reviewed:** 2026-08-19 · **English (canonical)** · [Русский](flutter-rust-bridge_RU.md)
+**Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](flutter-rust-bridge_RU.md)
 
-The first native bridge exposes the existing Rust ADLP and WAV bootstrap implementation to Flutter. It does not introduce audio capture, playback, Bluetooth, files selected by the user, background transmission or encryption. Its purpose is to make one real app-to-core round trip observable and testable without duplicating protocol or codec logic in Dart.
+The first native bridge exposes the existing Rust ADLP and WAV bootstrap implementation to Flutter. The app now has a separate local file adapter for selecting or saving WAV bytes, while the bridge itself still does not introduce audio capture, playback, Bluetooth, background transmission or encryption. Its purpose is to make one real app-to-core round trip observable and testable without duplicating protocol or codec logic in Dart.
 
 ## Boundary
 
@@ -20,6 +20,10 @@ The bridge crate is a thin native facade. `adlp-protocol` remains responsible fo
 | `decodeWav` | WAV bytes from memory | Verified text metadata, UTF-8 payload, sample rate and consumed samples | Framing, manifest or CRC-32C failure becomes an exception; no payload is returned. |
 
 The Flutter app chooses the session value in this first slice. The screen uses a positive timestamp-derived value only as local transfer metadata; it is not a timestamp claim, identity claim or cryptographic nonce.
+
+## File adapter boundary
+
+`PlatformWavFileAdapter` opens local platform dialogs and returns opaque WAV bytes or submits a verified in-memory buffer for saving. It does not parse the waveform, decide protocol validity, or read a payload. The Flutter workbench sends all selected bytes to `decodeWav`; a failed decode retains no received object. This keeps user filesystem interaction outside the deterministic protocol and codec boundary.
 
 ## Profiles and limits
 
