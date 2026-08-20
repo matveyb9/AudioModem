@@ -1,6 +1,6 @@
 # Platform support
 
-**Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](platform-support_RU.md)
+**Last reviewed:** 2026-08-21 · **English (canonical)** · [Русский](platform-support_RU.md)
 
 AudioModem keeps Flutter runners for Android, iOS, Windows, macOS, Linux and Web in one application directory. The Rust workspace supplies the container and WAV bootstrap codec. This structure is an implementation target, not a claim that every platform currently supports every route.
 
@@ -8,7 +8,7 @@ AudioModem keeps Flutter runners for Android, iOS, Windows, macOS, Linux and Web
 
 | Platform | Flutter runner | Rust/WAV integration | Local WAV workflow | Live audio | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Android | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires target build, permission and route-adapter acceptance tests. |
+| Android | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Draft experimental design | [Foreground adapter RFC](../../spec/android-live-audio-adapter-v1.md) and validator extension exist; target build, permission behavior, adapter and route evidence remain unverified. |
 | iOS | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires target build, permission and route-adapter acceptance tests. |
 | Windows | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires native device enumeration and routing tests. |
 | macOS | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires native device enumeration and routing tests. |

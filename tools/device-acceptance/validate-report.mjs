@@ -16,6 +16,7 @@ const RECORDING_AVAILABILITY = new Set([
   'public_unrestricted',
 ]);
 const OUTCOME_CLASSES = new Set(['observed', 'inconclusive', 'rejected']);
+const ANDROID_ADAPTER_CONTRACT = 'android-live-audio-adapter/v1';
 
 function fail(message) {
   throw new Error(message);
@@ -71,6 +72,79 @@ function validateEndpoint(value, field) {
   }
 }
 
+function isAndroidSpeakerMicrophone(report) {
+  return (
+    report.device?.route === 'speaker_microphone' &&
+    report.device?.source?.platform === 'android' &&
+    report.device?.sink?.platform === 'android'
+  );
+}
+
+function validateAudioModemV1Format(value, field) {
+  const format = object(value, field);
+  onlyKeys(format, field, new Set(['sample_rate_hz', 'channels', 'sample_format']));
+  if (required(format, 'sample_rate_hz') !== 48000) {
+    fail(`${field}.sample_rate_hz must be 48000`);
+  }
+  if (required(format, 'channels') !== 1) {
+    fail(`${field}.channels must be 1`);
+  }
+  if (required(format, 'sample_format') !== 'pcm_s16le') {
+    fail(`${field}.sample_format must be pcm_s16le`);
+  }
+}
+
+function validateAndroidAdapterObservation(value) {
+  const observation = object(value, 'adapter_observation');
+  onlyKeys(
+    observation,
+    'adapter_observation',
+    new Set([
+      'adapter_contract',
+      'api_level',
+      'operation',
+      'requested_format',
+      'effective_format',
+      'permission_state',
+      'focus_outcome',
+      'route_change_observed',
+      'interruption_policy',
+      'raw_pcm_retention',
+    ]),
+  );
+  if (required(observation, 'adapter_contract') !== ANDROID_ADAPTER_CONTRACT) {
+    fail('adapter_observation.adapter_contract is unsupported');
+  }
+  integer(required(observation, 'api_level'), 'adapter_observation.api_level', 26);
+  if (required(observation, 'operation') !== 'playback_capture') {
+    fail('adapter_observation.operation must be playback_capture');
+  }
+  validateAudioModemV1Format(
+    required(observation, 'requested_format'),
+    'adapter_observation.requested_format',
+  );
+  validateAudioModemV1Format(
+    required(observation, 'effective_format'),
+    'adapter_observation.effective_format',
+  );
+  if (required(observation, 'permission_state') !== 'granted') {
+    fail('adapter_observation.permission_state must be granted');
+  }
+  const focusOutcome = required(observation, 'focus_outcome');
+  if (focusOutcome !== 'granted' && focusOutcome !== 'delayed_then_granted') {
+    fail('adapter_observation.focus_outcome is unsupported');
+  }
+  if (typeof required(observation, 'route_change_observed') !== 'boolean') {
+    fail('adapter_observation.route_change_observed must be a boolean');
+  }
+  if (required(observation, 'interruption_policy') !== 'stop_no_auto_resume') {
+    fail('adapter_observation.interruption_policy must be stop_no_auto_resume');
+  }
+  if (required(observation, 'raw_pcm_retention') !== 'discarded') {
+    fail('adapter_observation.raw_pcm_retention must be discarded');
+  }
+}
+
 function validateMeasurement(report) {
   for (const field of ['device', 'test', 'evidence', 'outcome']) {
     required(report, field);
@@ -120,11 +194,17 @@ function validateMeasurement(report) {
     fail('outcome.classification is unsupported');
   }
   string(required(outcome, 'summary'), 'outcome.summary', { min: 1, max: 1000 });
+
+  if (isAndroidSpeakerMicrophone(report)) {
+    validateAndroidAdapterObservation(required(report, 'adapter_observation'));
+  } else if ('adapter_observation' in report) {
+    fail('adapter_observation is only allowed for Android speaker_microphone measurements');
+  }
 }
 
 export function validateReport(report) {
   const value = object(report, 'report');
-  onlyKeys(value, 'report', new Set(['schema_version', 'report_type', 'report_id', 'privacy_acknowledged', 'notes', 'device', 'test', 'evidence', 'outcome']));
+  onlyKeys(value, 'report', new Set(['schema_version', 'report_type', 'report_id', 'privacy_acknowledged', 'notes', 'device', 'test', 'evidence', 'outcome', 'adapter_observation']));
   if (required(value, 'schema_version') !== SCHEMA_VERSION) {
     fail('schema_version is unsupported');
   }
@@ -140,7 +220,7 @@ export function validateReport(report) {
     string(value.notes, 'notes', { min: 1, max: 1000 });
   }
   if (reportType === 'template') {
-    for (const field of ['device', 'test', 'evidence', 'outcome']) {
+    for (const field of ['device', 'test', 'evidence', 'outcome', 'adapter_observation']) {
       if (field in value) {
         fail(`template report must not contain ${field}`);
       }
