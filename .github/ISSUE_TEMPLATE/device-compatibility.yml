@@ -5,7 +5,7 @@ labels: ["device-compatibility", "needs-triage"]
 body:
   - type: markdown
     attributes:
-      value: "Do not attach recordings, user content, callsigns, keys or serial numbers."
+      value: "Read docs/operations/device-acceptance.md first. Do not attach recordings, user content, callsigns, keys, serial numbers, MAC addresses or account names. A schema-valid report is format evidence only, not a support claim."
   - type: input
     id: app_version
     attributes:
@@ -26,9 +26,35 @@ body:
       placeholder: e.g. Acoustic-1 / Balanced
     validations:
       required: true
+  - type: input
+    id: revision_and_fixture
+    attributes:
+      label: App revision, fixture and SHA-256
+      placeholder: e.g. 52a5aa3; acoustic-1-v1-text-balanced.wav; SHA-256
+    validations:
+      required: true
+  - type: textarea
+    id: reproducible_settings
+    attributes:
+      label: Reproducible settings
+      description: Include source/sink device classes (not serial numbers), OS version, carrier/profile, command or app settings, nominal sample rate and run count.
+    validations:
+      required: true
+  - type: dropdown
+    id: recording_availability
+    attributes:
+      label: Recording availability
+      options:
+        - not collected
+        - private and available on request
+        - public redacted
+        - public unrestricted
+    validations:
+      required: true
   - type: textarea
     id: result
     attributes:
-      label: Result and anonymised metrics
+      label: Result and anonymised totals
+      description: State accepted, rejected and inconclusive runs. Do not report BER, SNR, range or compatibility without a dedicated reviewed method.
     validations:
       required: true

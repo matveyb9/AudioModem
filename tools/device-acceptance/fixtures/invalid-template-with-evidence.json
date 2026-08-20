@@ -1,0 +1,13 @@
+{
+  "schema_version": "audio-modem-device-acceptance/v1",
+  "report_type": "template",
+  "report_id": "DARP-invalid-template",
+  "privacy_acknowledged": true,
+  "evidence": {
+    "evidence_class": "physical_route",
+    "run_count": 1,
+    "accepted_runs": 1,
+    "rejected_runs": 0,
+    "recording_availability": "not_collected"
+  }
+}

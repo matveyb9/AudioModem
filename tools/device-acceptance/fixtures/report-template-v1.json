@@ -1,0 +1,7 @@
+{
+  "schema_version": "audio-modem-device-acceptance/v1",
+  "report_type": "template",
+  "report_id": "DARP-template-v1",
+  "privacy_acknowledged": true,
+  "notes": "Unexecuted reporting template. It is not a device measurement or compatibility result."
+}

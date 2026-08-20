@@ -14,13 +14,14 @@
 | Локальный WAV file workflow | Завершён | User-selected save/open dialogs экспортируют/импортируют проверенные WAV bytes; file-object payloads остаются будущей работой. |
 | Acoustic-1 | Экспериментальный controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols и golden vectors существуют для PCM/WAV tests; speaker-to-microphone claim отсутствует. |
 | Acoustic-2 | Экспериментальный measurement harness | Вокруг Acoustic-1 существуют declared integer PCM transforms, bounded acquisition observables и golden measurement contract; device или channel metric claim отсутствует. |
+| Device-acceptance infrastructure | Завершён reporting/tooling contract | Schema, validator, privacy-preserving intake template и decision gates готовят future evidence; physical-route observation или supported device claim отсутствуют. |
 | Audio adapters | Планируется | Capture/playback, cable, Bluetooth и radio-interface adapters с per-platform acceptance tests. |
 | Trust и encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX и independent security review. |
 | Release engineering | Планируется | Signed packages, compatibility matrix, changelog, SBOM/checksums и clear support policy. |
 
 ## Decision gates
 
-Проект не должен заявлять live delivery, пока Acoustic-1 profile, route adapter и acceptance test не существуют вместе. Он не должен заявлять encryption, пока reviewed RFC не определит key ownership, exchange, verification, recovery и failure behavior. Он не должен заявлять cross-platform support, пока target не получил reproducible release artifact и documented limits.
+Проект не должен заявлять live delivery, пока Acoustic-1 profile, route adapter и acceptance test не существуют вместе. Schema-valid device report устанавливает только format; support claim дополнительно требует reviewable physical-route evidence и опубликованного supported-route gate. Проект не должен заявлять encryption, пока reviewed RFC не определит key ownership, exchange, verification, recovery и failure behavior. Он не должен заявлять cross-platform support, пока target не получил reproducible release artifact и documented limits.
 
 ## Участие
 
