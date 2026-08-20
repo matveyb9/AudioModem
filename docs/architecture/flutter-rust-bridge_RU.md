@@ -2,9 +2,9 @@
 
 [English (canonical)](flutter-rust-bridge.md) · **Русский перевод**
 
-> **Translation of:** [docs/architecture/flutter-rust-bridge.md](flutter-rust-bridge.md). **Last synced:** 2026-08-19.
+> **Translation of:** [docs/architecture/flutter-rust-bridge.md](flutter-rust-bridge.md). **Last synced:** 2026-08-20.
 
-Первый native bridge открывает Flutter доступ к существующей Rust-реализации ADLP и WAV bootstrap. Он не добавляет audio capture, playback, Bluetooth, выбранные пользователем файлы, background transmission или encryption. Его цель — сделать один реальный app-to-core round trip наблюдаемым и тестируемым без дублирования protocol или codec logic в Dart.
+Первый native bridge открывает Flutter доступ к существующей Rust-реализации ADLP и WAV bootstrap. В app теперь есть отдельный local file adapter для выбора и сохранения WAV bytes, тогда как сам bridge всё ещё не добавляет audio capture, playback, Bluetooth, background transmission или encryption. Его цель — сделать один реальный app-to-core round trip наблюдаемым и тестируемым без дублирования protocol или codec logic в Dart.
 
 ## Граница
 
@@ -22,6 +22,10 @@ Bridge crate — тонкий native facade. `adlp-protocol` остаётся о
 | `decodeWav` | WAV bytes из памяти | Verified text metadata, UTF-8 payload, sample rate и consumed samples | Framing, manifest или CRC-32C failure становится exception; payload не возвращается. |
 
 В этом первом срезе Flutter app выбирает session value. Экран использует positive timestamp-derived value только как local transfer metadata; это не timestamp claim, identity claim или cryptographic nonce.
+
+## Граница file adapter
+
+`PlatformWavFileAdapter` открывает локальные platform dialogs и возвращает opaque WAV bytes или передаёт проверенный in-memory buffer на сохранение. Он не анализирует waveform, не принимает решение о protocol validity и не читает payload. Flutter workbench передаёт все выбранные bytes в `decodeWav`; при failed decode полученный object не сохраняется. Это оставляет user filesystem interaction за пределами deterministic protocol и codec boundary.
 
 ## Profiles и limits
 

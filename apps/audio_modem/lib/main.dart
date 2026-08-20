@@ -1,10 +1,12 @@
 // AudioModem Flutter workbench: UI stays transport-aware while Rust owns ADLP and WAV codec behavior.
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import 'bridge/wav_bootstrap_bridge.dart';
+import 'platform/wav_file_adapter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +18,20 @@ Future<void> main() async {
       'Rust/WAV bridge initialization failed: $error',
     );
   }
-  runApp(AudioModemApp(bridge: bridge));
+  runApp(
+    AudioModemApp(bridge: bridge, fileAdapter: const PlatformWavFileAdapter()),
+  );
 }
 
 class AudioModemApp extends StatelessWidget {
-  const AudioModemApp({super.key, required this.bridge});
+  const AudioModemApp({
+    super.key,
+    required this.bridge,
+    required this.fileAdapter,
+  });
 
   final WavBootstrapBridge bridge;
+  final WavFileAdapter fileAdapter;
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +47,20 @@ class AudioModemApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFFFFCF5),
         useMaterial3: true,
       ),
-      home: TransferWorkbench(bridge: bridge),
+      home: TransferWorkbench(bridge: bridge, fileAdapter: fileAdapter),
     );
   }
 }
 
 class TransferWorkbench extends StatefulWidget {
-  const TransferWorkbench({super.key, required this.bridge});
+  const TransferWorkbench({
+    super.key,
+    required this.bridge,
+    required this.fileAdapter,
+  });
 
   final WavBootstrapBridge bridge;
+  final WavFileAdapter fileAdapter;
 
   @override
   State<TransferWorkbench> createState() => _TransferWorkbenchState();
@@ -61,6 +75,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   bool _isWorking = false;
   WavBuildResult? _builtWav;
   WavDecodeResult? _decodedWav;
+  String? _activeWavName;
+  Uint8List? _activeWavBytes;
   String? _bridgeError;
 
   @override
@@ -100,6 +116,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
       setState(() {
         _builtWav = built;
         _decodedWav = decoded;
+        _activeWavName = _suggestedWavName(built.sessionId);
+        _activeWavBytes = built.wavBytes;
       });
       _showMessage('WAV собран и проверен Rust decoder.');
     } catch (error) {
@@ -116,9 +134,9 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   }
 
   Future<void> _verifyCurrentWav() async {
-    final built = _builtWav;
-    if (built == null) {
-      _showMessage('Сначала соберите WAV во вкладке «Передать».');
+    final wavBytes = _activeWavBytes;
+    if (wavBytes == null) {
+      _showMessage('Сначала соберите или импортируйте WAV.');
       return;
     }
     setState(() {
@@ -126,7 +144,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
       _bridgeError = null;
     });
     try {
-      final decoded = await widget.bridge.decodeWav(built.wavBytes);
+      final decoded = await widget.bridge.decodeWav(wavBytes);
       if (!mounted) {
         return;
       }
@@ -143,6 +161,86 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
       }
     }
   }
+
+  Future<void> _exportBuiltWav() async {
+    final built = _builtWav;
+    if (built == null) {
+      _showMessage('Сначала соберите WAV во вкладке «Передать».');
+      return;
+    }
+    setState(() {
+      _isWorking = true;
+      _bridgeError = null;
+    });
+    try {
+      final saved = await widget.fileAdapter.saveWav(
+        suggestedName: _suggestedWavName(built.sessionId),
+        bytes: built.wavBytes,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (saved == null) {
+        _showMessage('Экспорт WAV отменён.');
+      } else {
+        _showMessage('WAV сохранён: ${saved.name}.');
+      }
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _bridgeError = error.toString());
+      _showMessage('Не удалось сохранить WAV.');
+    } finally {
+      if (mounted) {
+        setState(() => _isWorking = false);
+      }
+    }
+  }
+
+  Future<void> _importAndVerifyWav() async {
+    if (!widget.bridge.isAvailable) {
+      _showMessage('Rust/WAV bridge недоступен в этой сборке.');
+      return;
+    }
+    setState(() {
+      _isWorking = true;
+      _bridgeError = null;
+    });
+    try {
+      final selected = await widget.fileAdapter.openWav();
+      if (selected == null) {
+        if (mounted) {
+          _showMessage('Импорт WAV отменён.');
+        }
+        return;
+      }
+      final decoded = await widget.bridge.decodeWav(selected.bytes);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _activeWavName = selected.name;
+        _activeWavBytes = selected.bytes;
+        _decodedWav = decoded;
+      });
+      _showMessage('WAV импортирован и проверен Rust decoder.');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _bridgeError = error.toString());
+      _showMessage(
+        'Импортированный файл не является корректной WAV передачей.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isWorking = false);
+      }
+    }
+  }
+
+  String _suggestedWavName(int sessionId) => 'adlp-$sessionId.wav';
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -381,6 +479,12 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                   label: 'Decoder',
                   value: '${decoded.sampleRateHz ~/ 1000} kHz / CRC ok',
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _isWorking ? null : _exportBuiltWav,
+                  icon: const Icon(Icons.save_alt_outlined),
+                  label: const Text('Экспортировать WAV'),
+                ),
               ],
               if (_bridgeError case final error?) ...[
                 const SizedBox(height: 16),
@@ -447,9 +551,16 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                 const SizedBox(height: 8),
                 Text(
                   decoded == null
-                      ? 'Сначала соберите WAV во вкладке «Передать». Импорт файла и live receiver будут добавлены отдельными адаптерами.'
+                      ? 'Сначала соберите WAV во вкладке «Передать» или импортируйте готовую передачу.'
                       : 'Decoder вернул только объект, прошедший framing, manifest и CRC-32C проверку.',
                 ),
+                if (_activeWavName case final name?) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Источник: $name',
+                    style: const TextStyle(color: Color(0xFF6D6A62)),
+                  ),
+                ],
                 if (decoded != null) ...[
                   const SizedBox(height: 20),
                   _receiptRow('Позывной', decoded.senderCallsign),
@@ -470,6 +581,14 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                       : _verifyCurrentWav,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Повторно проверить WAV'),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _isWorking || !widget.bridge.isAvailable
+                      ? null
+                      : _importAndVerifyWav,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Импортировать WAV'),
                 ),
               ],
             ),

@@ -240,6 +240,8 @@ mod tests {
     use super::*;
     use adlp_protocol::TransferProfile;
 
+    const GOLDEN_WAV: &[u8] = include_bytes!("../tests/fixtures/adlp-v1-text-balanced.wav");
+
     #[test]
     fn wav_round_trip_preserves_adlp_object() {
         let object =
@@ -256,5 +258,22 @@ mod tests {
         let first_wire_symbol = 44 + (PREAMBLE_BITS + 16 + 32) * SAMPLES_PER_BIT * 2;
         wav[first_wire_symbol..first_wire_symbol + SAMPLES_PER_BIT * 2].fill(0);
         assert!(decode_wav(&wav).is_err());
+    }
+
+    #[test]
+    fn golden_wav_fixture_decodes_and_matches_deterministic_encoder() {
+        let expected = WireObject::text(
+            1,
+            "GOLDEN1",
+            "AudioModem ADLP golden fixture v1",
+            TransferProfile::Balanced,
+        )
+        .unwrap();
+        let decoded = decode_wav(GOLDEN_WAV).unwrap();
+
+        assert_eq!(decoded.object, expected);
+        assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
+        assert_eq!(decoded.samples_consumed, 20_160);
+        assert_eq!(encode_wav(&expected).unwrap(), GOLDEN_WAV);
     }
 }
