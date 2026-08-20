@@ -18,6 +18,8 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Cargokit builds this vendored tool with its own pubspec and dependency graph.
+    - rust_builder/cargokit/build_tool/**
 
 linter:
   # The lint rules applied to this project can be customized in the

@@ -12,6 +12,8 @@ This directory holds the human-readable technical documentation for AudioModem. 
 | Reference | [Transmission presets](reference/presets.md) | [Пресеты передачи](reference/presets_RU.md) | Profile identifiers and intent |
 | Operations | [Troubleshooting](troubleshooting.md) | [Диагностика](troubleshooting_RU.md) | Reproducible observations and reports |
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Verified work and upcoming milestones |
+| Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Native facade and in-memory WAV verification boundary |
+| Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Generated-code layout and regeneration command |
 | Specification | [ADLP v1](../spec/protocol-v1.md) | [ADLP v1 на русском](../spec/protocol-v1_RU.md) | Normative wire object and WAV bootstrap carrier |
 
 ## Translation convention
