@@ -53,7 +53,7 @@ Committed fixture выше намеренно является **unexecuted temp
 | Candidate-route gate | Доступны repeated real runs, declared device/route settings, fixture hashes, failures и maintainer review. | `experimental route candidate`. |
 | Supported-route gate | Существуют separate adapter RFC, reproducible target build, route-specific acceptance tests, published compatibility note и maintainer approval. | `supported` только для documented scope. |
 
-Schema сама по себе не устанавливает последние три gates. Она лишь не даёт принять incomplete evidence за measurement. Текущие статусы остаются в [границах audio routes](../guides/audio-routes_RU.md) и [platform matrix](../reference/platform-support_RU.md).
+[Constrained live-audio adapter RFC](../../spec/live-audio-adapter-v1_RU.md) закрывает только contract gate unavailable implementation'ом. Он не включает route и не даёт physical-route evidence, platform implementation или tests, требуемые поздними gates. Schema сама по себе не устанавливает последние три gates. Она лишь не даёт принять incomplete evidence за measurement. Текущие статусы остаются в [границах audio routes](../guides/audio-routes_RU.md) и [platform matrix](../reference/platform-support_RU.md).
 
 ## Ссылки
 

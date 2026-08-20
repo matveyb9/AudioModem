@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:audio_modem/bridge/wav_bootstrap_bridge.dart';
 import 'package:audio_modem/main.dart';
+import 'package:audio_modem/platform/live_audio_adapter.dart';
 import 'package:audio_modem/platform/wav_file_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,6 +73,33 @@ class _FakeWavFileAdapter implements WavFileAdapter {
 }
 
 void main() {
+  test('live-audio v1 format is explicitly PCM16 mono at 48 kHz', () {
+    expect(PcmStreamFormat.audioModemV1.isAudioModemV1, isTrue);
+    const incompatible = PcmStreamFormat(
+      sampleRateHz: 44100,
+      channels: 2,
+      sampleFormat: PcmSampleFormat.signedPcm16LittleEndian,
+    );
+    expect(incompatible.isAudioModemV1, isFalse);
+  });
+
+  test('unavailable live-audio adapter cannot start a route', () async {
+    const adapter = UnavailableLiveAudioAdapter('No tested live route.');
+    expect(adapter.availability.isAvailable, isFalse);
+    expect(adapter.availability.reason, 'No tested live route.');
+    await expectLater(
+      adapter.startPlayback(
+        pcmFrames: Uint8List(0),
+        format: PcmStreamFormat.audioModemV1,
+      ),
+      throwsA(isA<StateError>()),
+    );
+    await expectLater(
+      adapter.startCapture(format: PcmStreamFormat.audioModemV1).first,
+      throwsA(isA<StateError>()),
+    );
+  });
+
   testWidgets('send workbench builds and verifies an in-memory WAV flow', (
     tester,
   ) async {
@@ -144,5 +172,36 @@ void main() {
 
     expect(find.text('WAV object проверен.'), findsOneWidget);
     expect(find.text('Источник: received.wav'), findsOneWidget);
+  });
+
+  testWidgets('live route selection remains unavailable and does not encode', (
+    tester,
+  ) async {
+    final bridge = _FakeWavBridge();
+    await tester.pumpWidget(
+      AudioModemApp(
+        bridge: bridge,
+        fileAdapter: _FakeWavFileAdapter(),
+        liveAudioAdapter: const UnavailableLiveAudioAdapter(
+          'No tested live route.',
+        ),
+      ),
+    );
+
+    final speakerRoute = find.text('Динамик');
+    await tester.ensureVisible(speakerRoute);
+    await tester.tap(speakerRoute);
+    await tester.pumpAndSettle();
+
+    final buildButton = find.widgetWithText(
+      FilledButton,
+      'Собрать и проверить WAV',
+    );
+    await tester.ensureVisible(buildButton);
+    await tester.tap(buildButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('No tested live route.'), findsOneWidget);
+    expect(bridge.encodedCarrier, isNull);
   });
 }

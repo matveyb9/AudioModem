@@ -13,6 +13,7 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
 | Acoustic-2 | Experimental measurement harness | Declared integer PCM transforms, bounded acquisition observables and golden measurement contract exist around Acoustic-1; no device or channel metric claim. |
 | Device-acceptance infrastructure | Completed reporting/tooling contract | Schema, validator, privacy-preserving intake template and decision gates prepare future evidence; no physical-route observation or supported device claim exists. |
+| Live-audio adapter contract | Completed unavailable scaffold | Typed PCM/lifecycle boundary and unavailable behavior tests exist; no plugin, permission, capture, playback or physical route is enabled. |
 | Audio adapters | Planned | Capture/playback, cable, Bluetooth and radio-interface adapters with per-platform acceptance tests. |
 | Trust and encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX and independent security review. |
 | Release engineering | Planned | Signed packages, compatibility matrix, changelog, SBOM/checksums and clear support policy. |
