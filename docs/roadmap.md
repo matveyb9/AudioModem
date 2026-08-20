@@ -1,6 +1,6 @@
 # Roadmap
 
-**Last reviewed:** 2026-08-20 · **English (canonical)** · [Русский](roadmap_RU.md)
+**Last reviewed:** 2026-08-21 · **English (canonical)** · [Русский](roadmap_RU.md)
 
 This roadmap describes intended order, not dates or guaranteed delivery. It distinguishes verified repository state from research and planned product capability.
 
@@ -14,8 +14,8 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
 | Acoustic-2 | Experimental measurement harness | Declared integer PCM transforms, bounded acquisition observables and golden measurement contract exist around Acoustic-1; no device or channel metric claim. |
 | Device-acceptance infrastructure | Completed reporting/tooling contract | Schema, validator, privacy-preserving intake template and decision gates prepare future evidence; no physical-route observation or supported device claim exists. |
-| Live-audio adapter contract | Completed unavailable scaffold | Typed PCM/lifecycle boundary and unavailable behavior tests exist; no plugin, permission, capture, playback or physical route is enabled. |
-| Android foreground live-audio design | Draft experimental route design | Android API 26+ RFC, research decision and route-observation validator extension exist; no Android adapter, permission flow, target build or physical-route result exists. |
+| Live-audio adapter contract | Completed typed boundary | Unavailable behavior remains the default outside declared scope; typed PCM/lifecycle tests exist. |
+| Android foreground live audio | Experimental source implementation | Android API 26+ Kotlin/Flutter/Rust source, permission/focus/stop contract tests and route-observation validator extension exist; target build, runtime behavior and physical-route result remain unverified. |
 | Audio adapters | Planned | Capture/playback, cable, Bluetooth and radio-interface adapters with per-platform acceptance tests. |
 | Trust and encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX and independent security review. |
 | Release engineering | Planned | Signed packages, compatibility matrix, changelog, SBOM/checksums and clear support policy. |

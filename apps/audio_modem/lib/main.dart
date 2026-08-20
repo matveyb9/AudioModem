@@ -1,11 +1,13 @@
 // AudioModem Flutter workbench: UI stays transport-aware while Rust owns ADLP and WAV codec behavior.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import 'bridge/wav_bootstrap_bridge.dart';
+import 'platform/android_live_audio_adapter.dart';
 import 'platform/live_audio_adapter.dart';
 import 'platform/payload_file_adapter.dart';
 import 'platform/wav_file_adapter.dart';
@@ -21,12 +23,13 @@ Future<void> main() async {
       'Rust/WAV bridge initialization failed: $error',
     );
   }
+  final liveAudioAdapter = await AndroidLiveAudioAdapter.create();
   runApp(
     AudioModemApp(
       bridge: bridge,
       fileAdapter: const PlatformWavFileAdapter(),
       payloadFileAdapter: const PlatformPayloadFileAdapter(),
-      liveAudioAdapter: const UnavailableLiveAudioAdapter(),
+      liveAudioAdapter: liveAudioAdapter,
     ),
   );
 }
@@ -104,11 +107,16 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   Uint8List? _activeWavBytes;
   CarrierKind? _activeCarrier;
   String? _bridgeError;
+  StreamSubscription<Uint8List>? _captureSubscription;
+  BytesBuilder? _capturedPcm;
+  bool _isCapturing = false;
 
   bool get _isWorking => _task.isBusy;
 
   @override
   void dispose() {
+    unawaited(_captureSubscription?.cancel());
+    unawaited(widget.liveAudioAdapter.dispose());
     _callsign.dispose();
     _text.dispose();
     super.dispose();
@@ -174,11 +182,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
 
   Future<void> _buildAndVerifyWav() async {
     if (_route != TransferRoute.wav) {
-      final reason =
-          widget.liveAudioAdapter.availability.reason ??
-          'Live-audio маршрут недоступен. Выберите WAV-маршрут.';
-      _setTask(TransferTaskState.unavailable(reason));
-      _showMessage(reason);
+      await _sendLiveSpeakerText();
       return;
     }
     if (!widget.bridge.isAvailable) {
@@ -272,6 +276,219 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         bridgeError: error.toString(),
       );
       _showMessage('Rust bridge отклонил передачу. Проверьте поля объекта.');
+    }
+  }
+
+  Future<void> _sendLiveSpeakerText() async {
+    if (_route != TransferRoute.speaker) {
+      const reason =
+          'Android live-audio v1 не поддерживает этот маршрут. Выберите WAV или «Динамик».';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (_objectKind != TransferObjectKind.text) {
+      const reason =
+          'Android live-audio v1 передаёт только text object. Для файла используйте WAV workflow.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (!widget.bridge.isAvailable) {
+      const reason = 'Rust bridge недоступен для подготовки live PCM.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (!widget.liveAudioAdapter.availability.isAvailable) {
+      final reason =
+          widget.liveAudioAdapter.availability.reason ??
+          'Android foreground live audio недоступен.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (_carrier != CarrierKind.acoustic1) {
+      const reason =
+          'Android live-audio v1 требует experimental Acoustic-1 PCM carrier. Bootstrap доступен через WAV.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
+      return;
+    }
+    _setTask(TransferTaskState.preparing('Сборка Acoustic-1 PCM в Rust…'));
+    try {
+      final built = await widget.bridge.encodeTextToLivePcm(
+        sessionId: DateTime.now().microsecondsSinceEpoch,
+        senderCallsign: _callsign.text.trim(),
+        text: _text.text,
+        profile: _preset.bridgeProfile,
+        carrier: _carrier.bridgeCarrier,
+      );
+      _setTask(TransferTaskState.verifying('Проверка PCM через Rust decoder…'));
+      await widget.bridge.decodeLivePcmText(
+        pcmFrames: built.pcmFrames,
+        carrier: built.carrier,
+      );
+      _setTask(
+        TransferTaskState.preparing(
+          'Foreground playback через Android adapter…',
+        ),
+      );
+      await widget.liveAudioAdapter.startPlayback(
+        pcmFrames: built.pcmFrames,
+        format: PcmStreamFormat.audioModemV1,
+      );
+      _setTask(
+        TransferTaskState.completed(
+          'Android playback lifecycle завершён.',
+          detail: 'Rust подтвердил PCM framing; это не подтверждает приём или декодирование другим устройством.',
+        ),
+      );
+      _showMessage('PCM передан в Android AudioTrack без receiver claim.');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _setTask(
+        TransferTaskState.rejected(
+          'Android live-audio attempt отклонён или прерван.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
+      _showMessage(
+        'Android live-audio attempt не завершён. WAV workflow остаётся доступен.',
+      );
+    } finally {
+      await widget.liveAudioAdapter.stop();
+    }
+  }
+
+  Future<void> _startLiveCapture() async {
+    if (_isCapturing) {
+      return;
+    }
+    if (!widget.bridge.isAvailable) {
+      const reason = 'Rust bridge недоступен для проверки captured PCM.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (!widget.liveAudioAdapter.availability.isAvailable) {
+      final reason =
+          widget.liveAudioAdapter.availability.reason ??
+          'Android foreground live audio недоступен.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (_carrier != CarrierKind.acoustic1) {
+      const reason =
+          'Android capture v1 требует experimental Acoustic-1 PCM carrier. Выберите Acoustic-1 перед началом приёма.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
+      return;
+    }
+    final captured = BytesBuilder(copy: false);
+    try {
+      final subscription = widget.liveAudioAdapter
+          .startCapture(format: PcmStreamFormat.audioModemV1)
+          .listen(
+            captured.add,
+            onError: (Object error, StackTrace stackTrace) {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                _isCapturing = false;
+                _captureSubscription = null;
+                _task = TransferTaskState.rejected(
+                  'Android capture прерван.',
+                  detail: error.toString(),
+                );
+                _bridgeError = error.toString();
+              });
+              unawaited(widget.liveAudioAdapter.stop());
+            },
+          );
+      if (!mounted) {
+        await subscription.cancel();
+        return;
+      }
+      setState(() {
+        _capturedPcm = captured;
+        _captureSubscription = subscription;
+        _isCapturing = true;
+        _task = TransferTaskState.capturing(
+          'Android microphone capture активен.',
+        );
+      });
+    } catch (error) {
+      _setTask(
+        TransferTaskState.rejected(
+          'Android capture не удалось запустить.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
+    }
+  }
+
+  Future<void> _stopLiveCapture() async {
+    final captured = _capturedPcm;
+    final subscription = _captureSubscription;
+    if (!_isCapturing || captured == null) {
+      return;
+    }
+    setState(() {
+      _isCapturing = false;
+      _captureSubscription = null;
+      _task = TransferTaskState.verifying('Остановка capture и проверка PCM…');
+    });
+    await subscription?.cancel();
+    await widget.liveAudioAdapter.stop();
+    final pcmFrames = captured.takeBytes();
+    _capturedPcm = null;
+    if (pcmFrames.isEmpty) {
+      const reason = 'Android capture не вернул PCM frames для проверки.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
+      return;
+    }
+    try {
+      final decoded = await widget.bridge.decodeLivePcmText(
+        pcmFrames: pcmFrames,
+        carrier: CarrierKind.acoustic1.bridgeCarrier,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _decodedWav = decoded;
+        _decodedFileWav = null;
+        _activeWavName = 'Android foreground capture (not persisted)';
+        _activeWavBytes = null;
+        _activeCarrier = CarrierKind.acoustic1;
+        _task = TransferTaskState.completed(
+          'Captured PCM декодирован Rust.',
+          detail: 'Это локальный decoder result; он не является device-acceptance observation без отдельного report.',
+        );
+      });
+      _showMessage(
+        'Captured PCM проверен Rust decoder без route-support claim.',
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _setTask(
+        TransferTaskState.rejected(
+          'Rust decoder отклонил captured PCM.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
+      _showMessage('Captured PCM не дал проверенного ADLP object.');
     }
   }
 
@@ -551,7 +768,9 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Соберите и проверьте WAV.',
+          _route == TransferRoute.wav
+              ? 'Соберите и проверьте WAV.'
+              : 'Подготовьте foreground PCM attempt.',
           style: Theme.of(context).textTheme.displaySmall
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
@@ -814,7 +1033,11 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                       )
                     : const Icon(Icons.graphic_eq),
                 label: Text(
-                  _isWorking ? _task.message : 'Собрать и проверить WAV',
+                  _isWorking
+                      ? _task.message
+                      : _route == TransferRoute.wav
+                      ? 'Собрать и проверить WAV'
+                      : 'Передать Android PCM',
                 ),
               ),
               if (!widget.bridge.isAvailable) ...[
@@ -873,7 +1096,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
               ],
               const SizedBox(height: 12),
               const Text(
-                'WAV можно экспортировать и импортировать локально. Live-audio adapter contract добавлен, но capture, playback, cable, Bluetooth и radio adapters ещё не реализованы.',
+                'WAV можно экспортировать и импортировать локально. Android API 26+ foreground text/Acoustic-1 adapter экспериментален: результат playback/capture не доказывает доставку, приём другим устройством или supported route. Cable, Bluetooth и radio adapters отсутствуют.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
@@ -987,6 +1210,60 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                       : _importAndVerifyWav,
                   icon: const Icon(Icons.folder_open_outlined),
                   label: const Text('Импортировать WAV'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.mic_none_outlined,
+                  size: 36,
+                  color: Color(0xFFFFB000),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Android foreground capture · experimental',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.liveAudioAdapter.availability.isAvailable
+                      ? 'Текущий carrier: ${_carrier.label}. Capture доступен только для Acoustic-1, запрашивает microphone permission при нажатии и хранит PCM только до остановки и Rust verification.'
+                      : (widget.liveAudioAdapter.availability.reason ??
+                            'Android foreground capture недоступен в этой сборке.'),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed:
+                      !widget.liveAudioAdapter.availability.isAvailable ||
+                          (!_isCapturing &&
+                              (_isWorking || !widget.bridge.isAvailable))
+                      ? null
+                      : (_isCapturing ? _stopLiveCapture : _startLiveCapture),
+                  icon: Icon(
+                    _isCapturing ? Icons.stop_circle_outlined : Icons.mic,
+                  ),
+                  label: Text(
+                    _isCapturing
+                        ? 'Остановить и проверить PCM'
+                        : 'Начать Android capture',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Не используйте этот control как evidence для совместимости. Physical-route report создаётся только после реальных повторяемых hardware observations согласно device-acceptance protocol.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: Color(0xFF6D6A62),
+                  ),
                 ),
               ],
             ),

@@ -3,6 +3,7 @@
 enum TransferTaskPhase {
   idle,
   preparing,
+  capturing,
   verifying,
   completed,
   rejected,
@@ -24,6 +25,9 @@ class TransferTaskState {
 
   factory TransferTaskState.preparing(String message) =>
       TransferTaskState._(phase: TransferTaskPhase.preparing, message: message);
+
+  factory TransferTaskState.capturing(String message) =>
+      TransferTaskState._(phase: TransferTaskPhase.capturing, message: message);
 
   factory TransferTaskState.verifying(String message) =>
       TransferTaskState._(phase: TransferTaskPhase.verifying, message: message);
@@ -56,6 +60,7 @@ class TransferTaskState {
 
   bool get isBusy =>
       phase == TransferTaskPhase.preparing ||
+      phase == TransferTaskPhase.capturing ||
       phase == TransferTaskPhase.verifying;
 
   bool get isTerminal =>
@@ -67,6 +72,7 @@ class TransferTaskState {
   String get label => switch (phase) {
     TransferTaskPhase.idle => 'ОЖИДАНИЕ',
     TransferTaskPhase.preparing => 'ПОДГОТОВКА',
+    TransferTaskPhase.capturing => 'ПРИЁМ PCM',
     TransferTaskPhase.verifying => 'ПРОВЕРКА',
     TransferTaskPhase.completed => 'ГОТОВО',
     TransferTaskPhase.rejected => 'ОТКЛОНЕНО',

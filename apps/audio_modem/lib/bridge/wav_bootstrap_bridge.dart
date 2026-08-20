@@ -1,4 +1,4 @@
-// Product-layer bridge adapter. Rust remains the only source of ADLP and WAV codec logic.
+// Product-layer bridge adapter. Rust remains the only source of ADLP and WAV/PCM codec logic.
 
 import 'package:flutter/foundation.dart';
 
@@ -19,6 +19,22 @@ class WavBuildResult {
   final String carrier;
   final int sampleRateHz;
   final Uint8List wavBytes;
+}
+
+class LivePcmBuildResult {
+  const LivePcmBuildResult({
+    required this.sessionId,
+    required this.profile,
+    required this.carrier,
+    required this.sampleRateHz,
+    required this.pcmFrames,
+  });
+
+  final int sessionId;
+  final String profile;
+  final String carrier;
+  final int sampleRateHz;
+  final Uint8List pcmFrames;
 }
 
 class WavDecodeResult {
@@ -93,6 +109,19 @@ abstract interface class WavBootstrapBridge {
 
   Future<WavFileDecodeResult> decodeWavFile({
     required Uint8List wavBytes,
+    required String carrier,
+  });
+
+  Future<LivePcmBuildResult> encodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
+    required String profile,
+    required String carrier,
+  });
+
+  Future<WavDecodeResult> decodeLivePcmText({
+    required Uint8List pcmFrames,
     required String carrier,
   });
 }
@@ -208,6 +237,50 @@ class NativeWavBootstrapBridge implements WavBootstrapBridge {
       samplesConsumed: result.samplesConsumed,
     );
   }
+
+  @override
+  Future<LivePcmBuildResult> encodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
+    required String profile,
+    required String carrier,
+  }) async {
+    final result = await rust.encodeTextToLivePcm(
+      sessionId: sessionId,
+      senderCallsign: senderCallsign,
+      text: text,
+      profile: profile,
+      carrier: carrier,
+    );
+    return LivePcmBuildResult(
+      sessionId: result.sessionId,
+      profile: result.profile,
+      carrier: result.carrier,
+      sampleRateHz: result.sampleRateHz,
+      pcmFrames: result.pcmFrames,
+    );
+  }
+
+  @override
+  Future<WavDecodeResult> decodeLivePcmText({
+    required Uint8List pcmFrames,
+    required String carrier,
+  }) async {
+    final result = await rust.decodeLivePcmText(
+      pcmFrames: pcmFrames,
+      carrier: carrier,
+    );
+    return WavDecodeResult(
+      sessionId: result.sessionId,
+      senderCallsign: result.senderCallsign,
+      profile: result.profile,
+      carrier: result.carrier,
+      text: result.text,
+      sampleRateHz: result.sampleRateHz,
+      samplesConsumed: result.samplesConsumed,
+    );
+  }
 }
 
 class UnavailableWavBootstrapBridge implements WavBootstrapBridge {
@@ -247,6 +320,21 @@ class UnavailableWavBootstrapBridge implements WavBootstrapBridge {
   @override
   Future<WavFileDecodeResult> decodeWavFile({
     required Uint8List wavBytes,
+    required String carrier,
+  }) => Future.error(StateError(reason));
+
+  @override
+  Future<LivePcmBuildResult> encodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
+    required String profile,
+    required String carrier,
+  }) => Future.error(StateError(reason));
+
+  @override
+  Future<WavDecodeResult> decodeLivePcmText({
+    required Uint8List pcmFrames,
     required String carrier,
   }) => Future.error(StateError(reason));
 }

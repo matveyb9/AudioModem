@@ -73,7 +73,7 @@ class AudioModemRust
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 2115612387;
+  int get rustContentHash => -1462031589;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -85,6 +85,11 @@ class AudioModemRust
 }
 
 abstract class AudioModemRustApi extends BaseApi {
+  Future<DecodedTextTransfer> crateApiWavBootstrapDecodeLivePcmText({
+    required List<int> pcmFrames,
+    required String carrier,
+  });
+
   Future<DecodedFileTransfer> crateApiWavBootstrapDecodeWavFile({
     required List<int> wavBytes,
     required String carrier,
@@ -101,6 +106,14 @@ abstract class AudioModemRustApi extends BaseApi {
     required String fileName,
     required String mimeType,
     required List<int> payload,
+    required String profile,
+    required String carrier,
+  });
+
+  Future<EncodedPcmTransfer> crateApiWavBootstrapEncodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
     required String profile,
     required String carrier,
   });
@@ -124,6 +137,41 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
   });
 
   @override
+  Future<DecodedTextTransfer> crateApiWavBootstrapDecodeLivePcmText({
+    required List<int> pcmFrames,
+    required String carrier,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(pcmFrames, serializer);
+          sse_encode_String(carrier, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_decoded_text_transfer,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiWavBootstrapDecodeLivePcmTextConstMeta,
+        argValues: [pcmFrames, carrier],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWavBootstrapDecodeLivePcmTextConstMeta =>
+      const TaskConstMeta(
+        debugName: "decode_live_pcm_text",
+        argNames: ["pcmFrames", "carrier"],
+      );
+
+  @override
   Future<DecodedFileTransfer> crateApiWavBootstrapDecodeWavFile({
     required List<int> wavBytes,
     required String carrier,
@@ -137,7 +185,7 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 2,
             port: port_,
           );
         },
@@ -172,7 +220,7 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -217,7 +265,7 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -255,6 +303,47 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
       );
 
   @override
+  Future<EncodedPcmTransfer> crateApiWavBootstrapEncodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
+    required String profile,
+    required String carrier,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_CastedPrimitive_u_64(sessionId, serializer);
+          sse_encode_String(senderCallsign, serializer);
+          sse_encode_String(text, serializer);
+          sse_encode_String(profile, serializer);
+          sse_encode_String(carrier, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_encoded_pcm_transfer,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiWavBootstrapEncodeTextToLivePcmConstMeta,
+        argValues: [sessionId, senderCallsign, text, profile, carrier],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWavBootstrapEncodeTextToLivePcmConstMeta =>
+      const TaskConstMeta(
+        debugName: "encode_text_to_live_pcm",
+        argNames: ["sessionId", "senderCallsign", "text", "profile", "carrier"],
+      );
+
+  @override
   Future<EncodedWavTransfer> crateApiWavBootstrapEncodeTextToWav({
     required int sessionId,
     required String senderCallsign,
@@ -274,7 +363,7 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 6,
             port: port_,
           );
         },
@@ -342,6 +431,21 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
       text: dco_decode_String(arr[4]),
       sampleRateHz: dco_decode_u_32(arr[5]),
       samplesConsumed: dco_decode_u_32(arr[6]),
+    );
+  }
+
+  @protected
+  EncodedPcmTransfer dco_decode_encoded_pcm_transfer(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return EncodedPcmTransfer(
+      sessionId: dco_decode_CastedPrimitive_u_64(arr[0]),
+      profile: dco_decode_String(arr[1]),
+      carrier: dco_decode_String(arr[2]),
+      sampleRateHz: dco_decode_u_32(arr[3]),
+      pcmFrames: dco_decode_list_prim_u_8_strict(arr[4]),
     );
   }
 
@@ -455,6 +559,25 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
   }
 
   @protected
+  EncodedPcmTransfer sse_decode_encoded_pcm_transfer(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sessionId = sse_decode_CastedPrimitive_u_64(deserializer);
+    var var_profile = sse_decode_String(deserializer);
+    var var_carrier = sse_decode_String(deserializer);
+    var var_sampleRateHz = sse_decode_u_32(deserializer);
+    var var_pcmFrames = sse_decode_list_prim_u_8_strict(deserializer);
+    return EncodedPcmTransfer(
+      sessionId: var_sessionId,
+      profile: var_profile,
+      carrier: var_carrier,
+      sampleRateHz: var_sampleRateHz,
+      pcmFrames: var_pcmFrames,
+    );
+  }
+
+  @protected
   EncodedWavTransfer sse_decode_encoded_wav_transfer(
     SseDeserializer deserializer,
   ) {
@@ -559,6 +682,19 @@ class AudioModemRustApiImpl extends AudioModemRustApiImplPlatform
     sse_encode_String(self.text, serializer);
     sse_encode_u_32(self.sampleRateHz, serializer);
     sse_encode_u_32(self.samplesConsumed, serializer);
+  }
+
+  @protected
+  void sse_encode_encoded_pcm_transfer(
+    EncodedPcmTransfer self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_CastedPrimitive_u_64(self.sessionId, serializer);
+    sse_encode_String(self.profile, serializer);
+    sse_encode_String(self.carrier, serializer);
+    sse_encode_u_32(self.sampleRateHz, serializer);
+    sse_encode_list_prim_u_8_strict(self.pcmFrames, serializer);
   }
 
   @protected

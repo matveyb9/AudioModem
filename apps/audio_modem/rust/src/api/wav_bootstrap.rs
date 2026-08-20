@@ -9,6 +9,7 @@ use audio_modem_core::{
 
 const MAX_BRIDGE_TEXT_BYTES: usize = 8 * 1024;
 const MAX_BRIDGE_FILE_BYTES: usize = 8 * 1024;
+const MAX_LIVE_PCM_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Clone, Debug)]
 pub struct EncodedWavTransfer {
@@ -17,6 +18,15 @@ pub struct EncodedWavTransfer {
     pub carrier: String,
     pub sample_rate_hz: u32,
     pub wav_bytes: Vec<u8>,
+}
+
+#[derive(Clone, Debug)]
+pub struct EncodedPcmTransfer {
+    pub session_id: u64,
+    pub profile: String,
+    pub carrier: String,
+    pub sample_rate_hz: u32,
+    pub pcm_frames: Vec<u8>,
 }
 
 #[derive(Clone, Debug)]
@@ -114,6 +124,38 @@ pub fn encode_file_to_wav(
     })
 }
 
+/// Encodes a text ADLP object as experimental Acoustic-1 PCM16 LE frames.
+/// No live device is accessed here; the bootstrap carrier is intentionally excluded.
+pub fn encode_text_to_live_pcm(
+    session_id: u64,
+    sender_callsign: String,
+    text: String,
+    profile: String,
+    carrier: String,
+) -> Result<EncodedPcmTransfer, String> {
+    if session_id == 0 {
+        return Err("session_id must be positive".to_owned());
+    }
+    if text.len() > MAX_BRIDGE_TEXT_BYTES {
+        return Err("text exceeds the 8 KiB application limit".to_owned());
+    }
+    let profile = parse_profile(&profile)?;
+    let carrier = parse_live_pcm_carrier(&carrier)?;
+    let object = WireObject::text(session_id, sender_callsign, text, profile)
+        .map_err(|error| error.to_string())?;
+    let pcm_frames = acoustic1::encode_pcm16le(&object).map_err(|error| error.to_string())?;
+    if pcm_frames.len() > MAX_LIVE_PCM_BYTES {
+        return Err("encoded PCM exceeds the live adapter frame-buffer limit".to_owned());
+    }
+    Ok(EncodedPcmTransfer {
+        session_id,
+        profile: profile.as_str().to_owned(),
+        carrier: carrier.as_str().to_owned(),
+        sample_rate_hz: SAMPLE_RATE_HZ,
+        pcm_frames,
+    })
+}
+
 /// Decodes and verifies selected-carrier WAV bytes before exposing text metadata to Flutter.
 pub fn decode_wav_text(wav_bytes: Vec<u8>, carrier: String) -> Result<DecodedTextTransfer, String> {
     let carrier = parse_carrier(&carrier)?;
@@ -154,6 +196,36 @@ pub fn decode_wav_file(wav_bytes: Vec<u8>, carrier: String) -> Result<DecodedFil
         mime_type: object.manifest.mime_type,
         payload: object.payload,
         sample_rate_hz,
+        samples_consumed,
+    })
+}
+
+/// Decodes one bounded capture buffer as an experimental Acoustic-1 text object.
+/// The caller owns capture lifecycle; this method verifies carrier and ADLP integrity.
+pub fn decode_live_pcm_text(
+    pcm_frames: Vec<u8>,
+    carrier: String,
+) -> Result<DecodedTextTransfer, String> {
+    if pcm_frames.len() > MAX_LIVE_PCM_BYTES {
+        return Err("captured PCM exceeds the live adapter frame-buffer limit".to_owned());
+    }
+    let carrier = parse_live_pcm_carrier(&carrier)?;
+    let decoded = acoustic1::decode_pcm16le(&pcm_frames).map_err(|error| error.to_string())?;
+    let object = decoded.object;
+    if object.manifest.object_kind != ObjectKind::Text {
+        return Err("the PCM contains a non-text ADLP object".to_owned());
+    }
+    let text = String::from_utf8(object.payload)
+        .map_err(|_| "the ADLP text payload is not valid UTF-8".to_owned())?;
+    let samples_consumed = u32::try_from(decoded.samples_consumed)
+        .map_err(|_| "decoded sample count exceeds bridge return range".to_owned())?;
+    Ok(DecodedTextTransfer {
+        session_id: object.manifest.session_id,
+        sender_callsign: object.manifest.sender_callsign,
+        profile: object.manifest.profile.as_str().to_owned(),
+        carrier: carrier.as_str().to_owned(),
+        text,
+        sample_rate_hz: decoded.sample_rate_hz,
         samples_consumed,
     })
 }
@@ -215,6 +287,15 @@ fn parse_carrier(value: &str) -> Result<Carrier, String> {
     }
 }
 
+fn parse_live_pcm_carrier(value: &str) -> Result<Carrier, String> {
+    match parse_carrier(value)? {
+        Carrier::Acoustic1 => Ok(Carrier::Acoustic1),
+        Carrier::Bootstrap => {
+            Err("live PCM currently requires the experimental acoustic1 carrier".to_owned())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,6 +353,38 @@ mod tests {
         assert_eq!(decoded.session_id, 8);
         assert_eq!(decoded.profile, "fast");
         assert_eq!(decoded.carrier, "acoustic1");
+    }
+
+    #[test]
+    fn bridge_round_trips_experimental_acoustic1_live_pcm_text() {
+        let encoded = encode_text_to_live_pcm(
+            13,
+            "AC1PCM".to_owned(),
+            "Rust-owned PCM boundary".to_owned(),
+            "balanced".to_owned(),
+            "acoustic1".to_owned(),
+        )
+        .unwrap();
+        let decoded = decode_live_pcm_text(encoded.pcm_frames, "acoustic1".to_owned()).unwrap();
+        assert_eq!(decoded.session_id, 13);
+        assert_eq!(decoded.sender_callsign, "AC1PCM");
+        assert_eq!(decoded.text, "Rust-owned PCM boundary");
+        assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
+    }
+
+    #[test]
+    fn live_pcm_rejects_bootstrap_and_oversized_capture() {
+        assert!(encode_text_to_live_pcm(
+            14,
+            "AC1PCM".to_owned(),
+            "wrong carrier".to_owned(),
+            "balanced".to_owned(),
+            "bootstrap".to_owned(),
+        )
+        .is_err());
+        assert!(
+            decode_live_pcm_text(vec![0; MAX_LIVE_PCM_BYTES + 1], "acoustic1".to_owned(),).is_err()
+        );
     }
 
     #[test]

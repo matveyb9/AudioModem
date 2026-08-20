@@ -1,8 +1,8 @@
 # Android foreground live-audio adapter v1
 
-**Status:** Draft experimental platform-route design · **English (canonical)** · [Русский](android-live-audio-adapter-v1_RU.md)
+**Status:** Experimental source implementation · **English (canonical)** · [Русский](android-live-audio-adapter-v1_RU.md)
 
-This RFC specializes the [constrained live-audio adapter v1](live-audio-adapter-v1.md) for a first Android implementation. It does not enable Android audio, establish a device result, or make Android, speaker-to-microphone, cable, Bluetooth, headset or radio support claim.
+This RFC specializes the [constrained live-audio adapter v1](live-audio-adapter-v1.md) for a first Android implementation. Kotlin/Flutter/Rust source exists, but no Android target runtime or physical route has been verified. It does not establish a device result or make Android, speaker-to-microphone, cable, Bluetooth, headset or radio support claim.
 
 ## Scope
 
@@ -19,7 +19,7 @@ The adapter initially targets the OS-selected default capture/output path only. 
 
 ## Permission, focus and lifecycle
 
-`RECORD_AUDIO` is declared only when this RFC becomes an approved implementation change. Capture starts only after the user presses a capture action, the runtime permission is granted, and `AudioRecord` is initialized. The permission request must be contextual, cancellable and degrade to the existing WAV workflow when denied or revoked. [1] [3]
+The experimental source declares `RECORD_AUDIO`, but capture starts only after the user presses a capture action, the runtime permission is granted, and `AudioRecord` is initialized. The permission request must be contextual, cancellable and degrade to the existing WAV workflow when denied or revoked. [1] [3]
 
 Playback requests `AudioFocusRequest` immediately before `AudioTrack.play()`. A denied focus request rejects the attempt. A delayed request remains pending and must not write/play PCM until focus is granted. Any permanent or transient focus loss, route change, user stop, record/track failure or application lifecycle stop terminates the operation; v1 never auto-resumes. Android’s focus guidance requires applications to react to focus loss and abandon focus when playback ends. [4]
 
@@ -32,7 +32,7 @@ playing|capturing ──(stop, focus loss, route change, lifecycle stop, native 
 any state ──(dispose)──> disposed
 ```
 
-The current Flutter `LiveAudioAdapter` interface stays unchanged for this RFC. A later implementation may expose platform diagnostics through a separate event stream or status object, but must not expose unbounded raw microphone PCM as diagnostic data or make an unavailable adapter initialize Android audio APIs.
+The current Flutter `LiveAudioAdapter` interface stays unchanged for this RFC. The experimental source exposes capture frames only through a bounded transient event stream; it must not expose unbounded raw microphone PCM as diagnostic data or make an unavailable adapter initialize Android audio APIs.
 
 ## Native operation rules
 
@@ -64,7 +64,7 @@ The first physical experiment may use only a declared `acoustic1` fixture and th
 
 ## Non-goals
 
-This RFC does not approve implementation yet. It excludes Android API levels below 26, Web, iOS, Windows, macOS and Linux adapters; `MediaRecorder`; direct Rust microphone access; Bluetooth/cable/radio routing; device picker UI; background service; notification controls; persistence/history; duplex; echo cancellation; AGC; resampling; timing recovery changes; physical performance metrics; authentication; encryption; file transfer changes; and a supported-route claim.
+This RFC does not establish a supported implementation. It excludes Android API levels below 26, Web, iOS, Windows, macOS and Linux adapters; `MediaRecorder`; direct Rust microphone access; Bluetooth/cable/radio routing; device picker UI; background service; notification controls; persistence/history; duplex; echo cancellation; AGC; resampling; timing recovery changes; physical performance metrics; authentication; encryption; file transfer changes; and a supported-route claim.
 
 ## References
 
