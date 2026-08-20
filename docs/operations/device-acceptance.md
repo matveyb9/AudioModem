@@ -51,7 +51,7 @@ The committed fixture above is intentionally an **unexecuted template**, not a d
 | Candidate-route gate | Repeated real runs, declared device/route settings, fixture hashes, failures and a maintainer review are available. | `experimental route candidate`. |
 | Supported-route gate | A separate adapter RFC, reproducible target build, route-specific acceptance tests, published compatibility note and maintainer approval all exist. | `supported` for only the documented scope. |
 
-The schema cannot establish the last three gates by itself. It only prevents incomplete evidence from being mistaken for a measurement. The existing [audio-route boundaries](../guides/audio-routes.md) and [platform matrix](../reference/platform-support.md) remain authoritative for current support status.
+The [constrained live-audio adapter RFC](../../spec/live-audio-adapter-v1.md) closes only the contract gate with an unavailable implementation. It neither enables a route nor supplies the physical-route evidence, platform implementation or tests required by the later gates. The schema cannot establish the last three gates by itself. It only prevents incomplete evidence from being mistaken for a measurement. The existing [audio-route boundaries](../guides/audio-routes.md) and [platform matrix](../reference/platform-support.md) remain authoritative for current support status.
 
 ## References
 

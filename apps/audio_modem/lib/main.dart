@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import 'bridge/wav_bootstrap_bridge.dart';
+import 'platform/live_audio_adapter.dart';
 import 'platform/wav_file_adapter.dart';
 
 Future<void> main() async {
@@ -19,7 +20,11 @@ Future<void> main() async {
     );
   }
   runApp(
-    AudioModemApp(bridge: bridge, fileAdapter: const PlatformWavFileAdapter()),
+    AudioModemApp(
+      bridge: bridge,
+      fileAdapter: const PlatformWavFileAdapter(),
+      liveAudioAdapter: const UnavailableLiveAudioAdapter(),
+    ),
   );
 }
 
@@ -28,10 +33,12 @@ class AudioModemApp extends StatelessWidget {
     super.key,
     required this.bridge,
     required this.fileAdapter,
+    this.liveAudioAdapter = const UnavailableLiveAudioAdapter(),
   });
 
   final WavBootstrapBridge bridge;
   final WavFileAdapter fileAdapter;
+  final LiveAudioAdapter liveAudioAdapter;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +54,11 @@ class AudioModemApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFFFFCF5),
         useMaterial3: true,
       ),
-      home: TransferWorkbench(bridge: bridge, fileAdapter: fileAdapter),
+      home: TransferWorkbench(
+        bridge: bridge,
+        fileAdapter: fileAdapter,
+        liveAudioAdapter: liveAudioAdapter,
+      ),
     );
   }
 }
@@ -57,10 +68,12 @@ class TransferWorkbench extends StatefulWidget {
     super.key,
     required this.bridge,
     required this.fileAdapter,
+    required this.liveAudioAdapter,
   });
 
   final WavBootstrapBridge bridge;
   final WavFileAdapter fileAdapter;
+  final LiveAudioAdapter liveAudioAdapter;
 
   @override
   State<TransferWorkbench> createState() => _TransferWorkbenchState();
@@ -91,7 +104,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   Future<void> _buildAndVerifyWav() async {
     if (_route != TransferRoute.wav) {
       _showMessage(
-        'Первый Rust bridge реализован только для WAV. Выберите WAV-маршрут.',
+        widget.liveAudioAdapter.availability.reason ??
+            'Live-audio маршрут недоступен. Выберите WAV-маршрут.',
       );
       return;
     }
@@ -540,7 +554,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
               ],
               const SizedBox(height: 12),
               const Text(
-                'WAV можно экспортировать и импортировать локально. Live audio, cable, Bluetooth и radio adapters ещё не реализованы.',
+                'WAV можно экспортировать и импортировать локально. Live-audio adapter contract добавлен, но capture, playback, cable, Bluetooth и radio adapters ещё не реализованы.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,

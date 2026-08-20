@@ -43,10 +43,12 @@ jobs:
             "docs/research/acoustic-1-phy-sources.md:docs/research/acoustic-1-phy-sources_RU.md"
             "docs/research/acoustic-2-measurement-sources.md:docs/research/acoustic-2-measurement-sources_RU.md"
             "docs/research/device-acceptance-sources.md:docs/research/device-acceptance-sources_RU.md"
+            "docs/research/live-audio-adapter-sources.md:docs/research/live-audio-adapter-sources_RU.md"
             "docs/operations/device-acceptance.md:docs/operations/device-acceptance_RU.md"
             "spec/protocol-v1.md:spec/protocol-v1_RU.md"
             "spec/acoustic-1.md:spec/acoustic-1_RU.md"
             "spec/acoustic-2.md:spec/acoustic-2_RU.md"
+            "spec/live-audio-adapter-v1.md:spec/live-audio-adapter-v1_RU.md"
           )
           for pair in "${pairs[@]}"; do
             source_path="${pair%%:*}"
