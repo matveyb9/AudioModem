@@ -7,9 +7,9 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `as_str`, `parse_carrier`, `parse_profile`
+// These functions are ignored because they are not marked as `pub`: `as_str`, `decode_selected_wav`, `parse_carrier`, `parse_profile`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Carrier`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`
 
 /// Encodes one text-only ADLP object into a selected canonical 48 kHz WAV carrier.
 Future<EncodedWavTransfer> encodeTextToWav({
@@ -26,6 +26,25 @@ Future<EncodedWavTransfer> encodeTextToWav({
   carrier: carrier,
 );
 
+/// Encodes one bounded file ADLP object into a selected canonical 48 kHz WAV carrier.
+Future<EncodedWavTransfer> encodeFileToWav({
+  required int sessionId,
+  required String senderCallsign,
+  required String fileName,
+  required String mimeType,
+  required List<int> payload,
+  required String profile,
+  required String carrier,
+}) => AudioModemRust.instance.api.crateApiWavBootstrapEncodeFileToWav(
+  sessionId: sessionId,
+  senderCallsign: senderCallsign,
+  fileName: fileName,
+  mimeType: mimeType,
+  payload: payload,
+  profile: profile,
+  carrier: carrier,
+);
+
 /// Decodes and verifies selected-carrier WAV bytes before exposing text metadata to Flutter.
 Future<DecodedTextTransfer> decodeWavText({
   required List<int> wavBytes,
@@ -34,6 +53,66 @@ Future<DecodedTextTransfer> decodeWavText({
   wavBytes: wavBytes,
   carrier: carrier,
 );
+
+/// Decodes and verifies selected-carrier WAV bytes before exposing file metadata and bytes to Flutter.
+Future<DecodedFileTransfer> decodeWavFile({
+  required List<int> wavBytes,
+  required String carrier,
+}) => AudioModemRust.instance.api.crateApiWavBootstrapDecodeWavFile(
+  wavBytes: wavBytes,
+  carrier: carrier,
+);
+
+class DecodedFileTransfer {
+  final int sessionId;
+  final String senderCallsign;
+  final String profile;
+  final String carrier;
+  final String fileName;
+  final String mimeType;
+  final Uint8List payload;
+  final int sampleRateHz;
+  final int samplesConsumed;
+
+  const DecodedFileTransfer({
+    required this.sessionId,
+    required this.senderCallsign,
+    required this.profile,
+    required this.carrier,
+    required this.fileName,
+    required this.mimeType,
+    required this.payload,
+    required this.sampleRateHz,
+    required this.samplesConsumed,
+  });
+
+  @override
+  int get hashCode =>
+      sessionId.hashCode ^
+      senderCallsign.hashCode ^
+      profile.hashCode ^
+      carrier.hashCode ^
+      fileName.hashCode ^
+      mimeType.hashCode ^
+      payload.hashCode ^
+      sampleRateHz.hashCode ^
+      samplesConsumed.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DecodedFileTransfer &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId &&
+          senderCallsign == other.senderCallsign &&
+          profile == other.profile &&
+          carrier == other.carrier &&
+          fileName == other.fileName &&
+          mimeType == other.mimeType &&
+          payload == other.payload &&
+          sampleRateHz == other.sampleRateHz &&
+          samplesConsumed == other.samplesConsumed;
+}
 
 class DecodedTextTransfer {
   final int sessionId;

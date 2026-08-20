@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 
 import 'bridge/wav_bootstrap_bridge.dart';
 import 'platform/live_audio_adapter.dart';
+import 'platform/payload_file_adapter.dart';
 import 'platform/wav_file_adapter.dart';
+import 'transfer/transfer_task.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,7 @@ Future<void> main() async {
     AudioModemApp(
       bridge: bridge,
       fileAdapter: const PlatformWavFileAdapter(),
+      payloadFileAdapter: const PlatformPayloadFileAdapter(),
       liveAudioAdapter: const UnavailableLiveAudioAdapter(),
     ),
   );
@@ -33,11 +36,13 @@ class AudioModemApp extends StatelessWidget {
     super.key,
     required this.bridge,
     required this.fileAdapter,
+    this.payloadFileAdapter = const PlatformPayloadFileAdapter(),
     this.liveAudioAdapter = const UnavailableLiveAudioAdapter(),
   });
 
   final WavBootstrapBridge bridge;
   final WavFileAdapter fileAdapter;
+  final PayloadFileAdapter payloadFileAdapter;
   final LiveAudioAdapter liveAudioAdapter;
 
   @override
@@ -57,6 +62,7 @@ class AudioModemApp extends StatelessWidget {
       home: TransferWorkbench(
         bridge: bridge,
         fileAdapter: fileAdapter,
+        payloadFileAdapter: payloadFileAdapter,
         liveAudioAdapter: liveAudioAdapter,
       ),
     );
@@ -68,11 +74,13 @@ class TransferWorkbench extends StatefulWidget {
     super.key,
     required this.bridge,
     required this.fileAdapter,
+    required this.payloadFileAdapter,
     required this.liveAudioAdapter,
   });
 
   final WavBootstrapBridge bridge;
   final WavFileAdapter fileAdapter;
+  final PayloadFileAdapter payloadFileAdapter;
   final LiveAudioAdapter liveAudioAdapter;
 
   @override
@@ -85,14 +93,19 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
   TransferPreset _preset = TransferPreset.balanced;
   CarrierKind _carrier = CarrierKind.bootstrap;
   TransferRoute _route = TransferRoute.wav;
+  TransferObjectKind _objectKind = TransferObjectKind.text;
   int _tabIndex = 0;
-  bool _isWorking = false;
+  TransferTaskState _task = const TransferTaskState.idle();
   WavBuildResult? _builtWav;
   WavDecodeResult? _decodedWav;
+  WavFileDecodeResult? _decodedFileWav;
+  SelectedPayloadFile? _selectedPayloadFile;
   String? _activeWavName;
   Uint8List? _activeWavBytes;
   CarrierKind? _activeCarrier;
   String? _bridgeError;
+
+  bool get _isWorking => _task.isBusy;
 
   @override
   void dispose() {
@@ -101,56 +114,164 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
     super.dispose();
   }
 
-  Future<void> _buildAndVerifyWav() async {
-    if (_route != TransferRoute.wav) {
-      _showMessage(
-        widget.liveAudioAdapter.availability.reason ??
-            'Live-audio маршрут недоступен. Выберите WAV-маршрут.',
-      );
-      return;
-    }
-    if (!widget.bridge.isAvailable) {
-      _showMessage('Rust/WAV bridge недоступен в этой сборке.');
+  void _setTask(TransferTaskState task, {String? bridgeError}) {
+    if (!mounted) {
       return;
     }
     setState(() {
-      _isWorking = true;
-      _bridgeError = null;
+      _task = task;
+      _bridgeError = bridgeError;
     });
+  }
+
+  void _resetTaskAfterEdit() {
+    setState(() {
+      if (_task.isTerminal) {
+        _task = const TransferTaskState.idle();
+      }
+    });
+  }
+
+  Future<void> _selectPayloadFile() async {
+    _setTask(TransferTaskState.preparing('Выбор файла для ADLP объекта…'));
     try {
-      final sessionId = DateTime.now().microsecondsSinceEpoch;
-      final built = await widget.bridge.encodeText(
-        sessionId: sessionId,
-        senderCallsign: _callsign.text.trim(),
-        text: _text.text,
-        profile: _preset.bridgeProfile,
-        carrier: _carrier.bridgeCarrier,
-      );
-      final decoded = await widget.bridge.decodeWav(
-        wavBytes: built.wavBytes,
-        carrier: _carrier.bridgeCarrier,
-      );
+      final selected = await widget.payloadFileAdapter.openPayload();
       if (!mounted) {
         return;
       }
+      if (selected == null) {
+        _setTask(TransferTaskState.cancelled('Выбор файла отменён.'));
+        return;
+      }
       setState(() {
-        _builtWav = built;
-        _decodedWav = decoded;
-        _activeWavName = _suggestedWavName(built.sessionId, _carrier);
-        _activeWavBytes = built.wavBytes;
-        _activeCarrier = _carrier;
+        _selectedPayloadFile = selected;
+        _task = TransferTaskState.completed(
+          'Файл выбран для WAV reference path.',
+          detail: '${selected.name} · ${selected.bytes.length} байт',
+        );
       });
+    } catch (error) {
+      _setTask(
+        TransferTaskState.rejected(
+          'Не удалось прочитать выбранный файл.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
+    }
+  }
+
+  String _mimeTypeFor(String fileName) {
+    final normalized = fileName.toLowerCase();
+    if (normalized.endsWith('.txt')) return 'text/plain';
+    if (normalized.endsWith('.json')) return 'application/json';
+    if (normalized.endsWith('.png')) return 'image/png';
+    if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    return 'application/octet-stream';
+  }
+
+  Future<void> _buildAndVerifyWav() async {
+    if (_route != TransferRoute.wav) {
+      final reason =
+          widget.liveAudioAdapter.availability.reason ??
+          'Live-audio маршрут недоступен. Выберите WAV-маршрут.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    if (!widget.bridge.isAvailable) {
+      const reason = 'Rust/WAV bridge недоступен в этой сборке.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
+      return;
+    }
+    final selectedPayloadFile = _selectedPayloadFile;
+    if (_objectKind == TransferObjectKind.file && selectedPayloadFile == null) {
+      const reason = 'Сначала выберите файл для ADLP объекта.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
+      return;
+    }
+    _setTask(TransferTaskState.preparing('Сборка ADLP/WAV в Rust…'));
+    try {
+      final sessionId = DateTime.now().microsecondsSinceEpoch;
+      if (_objectKind == TransferObjectKind.text) {
+        final built = await widget.bridge.encodeText(
+          sessionId: sessionId,
+          senderCallsign: _callsign.text.trim(),
+          text: _text.text,
+          profile: _preset.bridgeProfile,
+          carrier: _carrier.bridgeCarrier,
+        );
+        _setTask(TransferTaskState.verifying('Проверка WAV Rust decoder…'));
+        final decoded = await widget.bridge.decodeWav(
+          wavBytes: built.wavBytes,
+          carrier: _carrier.bridgeCarrier,
+        );
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _builtWav = built;
+          _decodedWav = decoded;
+          _decodedFileWav = null;
+          _activeWavName = _suggestedWavName(built.sessionId, _carrier);
+          _activeWavBytes = built.wavBytes;
+          _activeCarrier = _carrier;
+          _task = TransferTaskState.completed(
+            'Text WAV собран и проверен.',
+            detail: 'Rust decoder подтвердил framing, manifest и CRC-32C.',
+          );
+        });
+      } else {
+        final payload = selectedPayloadFile!;
+        final built = await widget.bridge.encodeFile(
+          sessionId: sessionId,
+          senderCallsign: _callsign.text.trim(),
+          fileName: payload.name,
+          mimeType: _mimeTypeFor(payload.name),
+          payload: payload.bytes,
+          profile: _preset.bridgeProfile,
+          carrier: _carrier.bridgeCarrier,
+        );
+        _setTask(
+          TransferTaskState.verifying('Проверка file WAV Rust decoder…'),
+        );
+        final decoded = await widget.bridge.decodeWavFile(
+          wavBytes: built.wavBytes,
+          carrier: _carrier.bridgeCarrier,
+        );
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _builtWav = built;
+          _decodedWav = null;
+          _decodedFileWav = decoded;
+          _activeWavName = _suggestedWavName(built.sessionId, _carrier);
+          _activeWavBytes = built.wavBytes;
+          _activeCarrier = _carrier;
+          _task = TransferTaskState.completed(
+            'File WAV собран и проверен.',
+            detail: '${decoded.fileName} · ${decoded.payload.length} байт',
+          );
+        });
+      }
       _showMessage('WAV собран и проверен Rust decoder.');
     } catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() => _bridgeError = error.toString());
+      _setTask(
+        TransferTaskState.rejected(
+          'Rust bridge отклонил передачу.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
       _showMessage('Rust bridge отклонил передачу. Проверьте поля объекта.');
-    } finally {
-      if (mounted) {
-        setState(() => _isWorking = false);
-      }
     }
   }
 
@@ -158,45 +279,70 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
     final wavBytes = _activeWavBytes;
     final carrier = _activeCarrier;
     if (wavBytes == null || carrier == null) {
-      _showMessage('Сначала соберите или импортируйте WAV.');
+      const reason = 'Сначала соберите или импортируйте WAV.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
       return;
     }
-    setState(() {
-      _isWorking = true;
-      _bridgeError = null;
-    });
+    _setTask(TransferTaskState.verifying('Повторная проверка WAV…'));
     try {
-      final decoded = await widget.bridge.decodeWav(
-        wavBytes: wavBytes,
-        carrier: carrier.bridgeCarrier,
-      );
-      if (!mounted) {
-        return;
+      if (_decodedFileWav != null) {
+        final decoded = await widget.bridge.decodeWavFile(
+          wavBytes: wavBytes,
+          carrier: carrier.bridgeCarrier,
+        );
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _decodedFileWav = decoded;
+          _decodedWav = null;
+          _task = TransferTaskState.completed(
+            'File WAV повторно проверен.',
+            detail: '${decoded.fileName} · ${decoded.payload.length} байт',
+          );
+        });
+      } else {
+        final decoded = await widget.bridge.decodeWav(
+          wavBytes: wavBytes,
+          carrier: carrier.bridgeCarrier,
+        );
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _decodedWav = decoded;
+          _decodedFileWav = null;
+          _task = TransferTaskState.completed(
+            'WAV повторно проверен.',
+            detail: 'Rust decoder подтвердил текущие WAV bytes.',
+          );
+        });
       }
-      setState(() => _decodedWav = decoded);
       _showMessage('WAV повторно проверен Rust decoder.');
     } catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() => _bridgeError = error.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _isWorking = false);
-      }
+      _setTask(
+        TransferTaskState.rejected(
+          'Rust decoder отклонил текущий WAV.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
     }
   }
 
   Future<void> _exportBuiltWav() async {
     final built = _builtWav;
     if (built == null) {
-      _showMessage('Сначала соберите WAV во вкладке «Передать».');
+      const reason = 'Сначала соберите WAV во вкладке «Передать».';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
       return;
     }
-    setState(() {
-      _isWorking = true;
-      _bridgeError = null;
-    });
+    _setTask(TransferTaskState.preparing('Сохранение WAV…'));
     try {
       final saved = await widget.fileAdapter.saveWav(
         suggestedName: _suggestedWavName(built.sessionId, _carrier),
@@ -206,44 +352,63 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         return;
       }
       if (saved == null) {
+        _setTask(TransferTaskState.cancelled('Экспорт WAV отменён.'));
         _showMessage('Экспорт WAV отменён.');
       } else {
+        _setTask(
+          TransferTaskState.completed(
+            'WAV сохранён.',
+            detail: 'Файл: ${saved.name}',
+          ),
+        );
         _showMessage('WAV сохранён: ${saved.name}.');
       }
     } catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() => _bridgeError = error.toString());
+      _setTask(
+        TransferTaskState.rejected(
+          'Не удалось сохранить WAV.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
       _showMessage('Не удалось сохранить WAV.');
-    } finally {
-      if (mounted) {
-        setState(() => _isWorking = false);
-      }
     }
   }
 
   Future<void> _importAndVerifyWav() async {
     if (!widget.bridge.isAvailable) {
-      _showMessage('Rust/WAV bridge недоступен в этой сборке.');
+      const reason = 'Rust/WAV bridge недоступен в этой сборке.';
+      _setTask(TransferTaskState.unavailable(reason));
+      _showMessage(reason);
       return;
     }
-    setState(() {
-      _isWorking = true;
-      _bridgeError = null;
-    });
+    _setTask(TransferTaskState.preparing('Выбор WAV для импорта…'));
     try {
       final selected = await widget.fileAdapter.openWav();
       if (selected == null) {
         if (mounted) {
+          _setTask(TransferTaskState.cancelled('Импорт WAV отменён.'));
           _showMessage('Импорт WAV отменён.');
         }
         return;
       }
-      final decoded = await widget.bridge.decodeWav(
-        wavBytes: selected.bytes,
-        carrier: _carrier.bridgeCarrier,
-      );
+      _setTask(TransferTaskState.verifying('Проверка импортированного WAV…'));
+      WavDecodeResult? decodedText;
+      WavFileDecodeResult? decodedFile;
+      try {
+        decodedText = await widget.bridge.decodeWav(
+          wavBytes: selected.bytes,
+          carrier: _carrier.bridgeCarrier,
+        );
+      } catch (_) {
+        decodedFile = await widget.bridge.decodeWavFile(
+          wavBytes: selected.bytes,
+          carrier: _carrier.bridgeCarrier,
+        );
+      }
       if (!mounted) {
         return;
       }
@@ -251,21 +416,74 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
         _activeWavName = selected.name;
         _activeWavBytes = selected.bytes;
         _activeCarrier = _carrier;
-        _decodedWav = decoded;
+        _decodedWav = decodedText;
+        _decodedFileWav = decodedFile;
+        _task = TransferTaskState.completed(
+          'WAV импортирован и проверен.',
+          detail: decodedFile == null
+              ? 'Text object · источник: ${selected.name}'
+              : '${decodedFile.fileName} · ${decodedFile.payload.length} байт',
+        );
       });
       _showMessage('WAV импортирован и проверен Rust decoder.');
     } catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() => _bridgeError = error.toString());
+      _setTask(
+        TransferTaskState.rejected(
+          'Импортированный файл не является корректной WAV передачей.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
       _showMessage(
         'Импортированный файл не является корректной WAV передачей.',
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isWorking = false);
+    }
+  }
+
+  Future<void> _saveDecodedPayload() async {
+    final decoded = _decodedFileWav;
+    if (decoded == null) {
+      const reason = 'Нет проверенного file payload для сохранения.';
+      _setTask(TransferTaskState.rejected(reason));
+      _showMessage(reason);
+      return;
+    }
+    _setTask(
+      TransferTaskState.preparing('Сохранение проверенного file payload…'),
+    );
+    try {
+      final saved = await widget.payloadFileAdapter.savePayload(
+        suggestedName: decoded.fileName,
+        bytes: decoded.payload,
+      );
+      if (!mounted) {
+        return;
       }
+      if (saved == null) {
+        _setTask(
+          TransferTaskState.cancelled('Сохранение file payload отменено.'),
+        );
+        return;
+      }
+      _setTask(
+        TransferTaskState.completed(
+          'Проверенный file payload сохранён.',
+          detail: saved.name,
+        ),
+      );
+      _showMessage('Файл сохранён: ${saved.name}.');
+    } catch (error) {
+      _setTask(
+        TransferTaskState.rejected(
+          'Не удалось сохранить file payload.',
+          detail: error.toString(),
+        ),
+        bridgeError: error.toString(),
+      );
+      _showMessage('Не удалось сохранить file payload.');
     }
   }
 
@@ -367,24 +585,52 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
             TextField(
               controller: _callsign,
               maxLength: 32,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                _resetTaskAfterEdit();
+                setState(() {});
+              },
               decoration: const InputDecoration(
                 labelText: 'Позывной отправителя',
                 prefixIcon: Icon(Icons.badge_outlined),
               ),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _text,
-              minLines: 5,
-              maxLines: 8,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'Текст',
-                alignLabelWithHint: true,
-                hintText: 'Введите сообщение для ADLP-контейнера',
-              ),
+            Text('Тип объекта', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SegmentedButton<TransferObjectKind>(
+              segments: TransferObjectKind.values
+                  .map(
+                    (kind) => ButtonSegment(
+                      value: kind,
+                      icon: Icon(kind.icon),
+                      label: Text(kind.label),
+                    ),
+                  )
+                  .toList(),
+              selected: {_objectKind},
+              onSelectionChanged: (value) {
+                _resetTaskAfterEdit();
+                setState(() => _objectKind = value.first);
+              },
             ),
+            const SizedBox(height: 12),
+            if (_objectKind == TransferObjectKind.text)
+              TextField(
+                controller: _text,
+                minLines: 5,
+                maxLines: 8,
+                onChanged: (_) {
+                  _resetTaskAfterEdit();
+                  setState(() {});
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Текст',
+                  alignLabelWithHint: true,
+                  hintText: 'Введите сообщение для ADLP-контейнера',
+                ),
+              )
+            else
+              _payloadSelectionCard(context),
             const SizedBox(height: 18),
             Text(
               'Пресет передачи',
@@ -399,7 +645,10 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                     (preset) => ChoiceChip(
                       label: Text(preset.label),
                       selected: _preset == preset,
-                      onSelected: (_) => setState(() => _preset = preset),
+                      onSelected: (_) {
+                        _resetTaskAfterEdit();
+                        setState(() => _preset = preset);
+                      },
                     ),
                   )
                   .toList(),
@@ -415,7 +664,10 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                     (carrier) => ChoiceChip(
                       label: Text(carrier.label),
                       selected: _carrier == carrier,
-                      onSelected: (_) => setState(() => _carrier = carrier),
+                      onSelected: (_) {
+                        _resetTaskAfterEdit();
+                        setState(() => _carrier = carrier);
+                      },
                       tooltip: carrier.description,
                     ),
                   )
@@ -445,8 +697,10 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                   )
                   .toList(),
               selected: {_route},
-              onSelectionChanged: (value) =>
-                  setState(() => _route = value.first),
+              onSelectionChanged: (value) {
+                _resetTaskAfterEdit();
+                setState(() => _route = value.first);
+              },
             ),
           ],
         ),
@@ -454,9 +708,55 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
     );
   }
 
+  Widget _payloadSelectionCard(BuildContext context) {
+    final selected = _selectedPayloadFile;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E5),
+        border: Border.all(color: const Color(0xFFE2C987)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Файл для ADLP объекта',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            selected == null
+                ? 'Файл не выбран. Rust facade примет не более 8 KiB payload.'
+                : '${selected.name} · ${selected.bytes.length} байт · ${_mimeTypeFor(selected.name)}',
+            style: const TextStyle(fontSize: 12, height: 1.35),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _isWorking ? null : _selectPayloadFile,
+            icon: const Icon(Icons.attach_file),
+            label: Text(
+              selected == null ? 'Выбрать файл' : 'Выбрать другой файл',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Это локальный WAV reference workflow. Выбор файла не включает микрофон, Bluetooth, кабель или радиомаршрут.',
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.35,
+              color: Color(0xFF6D6A62),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _planCard(BuildContext context, int bytes) {
     final built = _builtWav;
     final decoded = _decodedWav;
+    final decodedFile = _decodedFileWav;
     return Card(
       color: const Color(0xFF242321),
       child: Padding(
@@ -489,7 +789,19 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
               Metric(label: 'Профиль', value: _preset.profileId),
               Metric(label: 'Carrier', value: _carrier.label),
               Metric(label: 'Маршрут', value: _route.label),
-              Metric(label: 'Текст', value: '$bytes байт UTF-8'),
+              Metric(label: 'Объект', value: _objectKind.label),
+              Metric(
+                label: _objectKind == TransferObjectKind.text
+                    ? 'Текст'
+                    : 'Файл',
+                value: _objectKind == TransferObjectKind.text
+                    ? '$bytes байт UTF-8'
+                    : _selectedPayloadFile == null
+                    ? 'не выбран'
+                    : '${_selectedPayloadFile!.bytes.length} байт',
+              ),
+              const SizedBox(height: 16),
+              TaskStatePanel(task: _task),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _isWorking || !widget.bridge.isAvailable
@@ -502,7 +814,7 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                       )
                     : const Icon(Icons.graphic_eq),
                 label: Text(
-                  _isWorking ? 'Проверка Rust…' : 'Собрать и проверить WAV',
+                  _isWorking ? _task.message : 'Собрать и проверить WAV',
                 ),
               ),
               if (!widget.bridge.isAvailable) ...[
@@ -516,7 +828,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                   ),
                 ),
               ],
-              if (built != null && decoded != null) ...[
+              if (built != null &&
+                  (decoded != null || decodedFile != null)) ...[
                 const SizedBox(height: 16),
                 const Divider(color: Color(0xFF6D6A62)),
                 const SizedBox(height: 8),
@@ -532,8 +845,14 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                 Metric(label: 'WAV', value: '${built.wavBytes.length} байт'),
                 Metric(
                   label: 'Decoder',
-                  value: '${decoded.sampleRateHz ~/ 1000} kHz / CRC ok',
+                  value:
+                      '${(decoded?.sampleRateHz ?? decodedFile!.sampleRateHz) ~/ 1000} kHz / CRC ok',
                 ),
+                if (decodedFile case final file?)
+                  Metric(
+                    label: 'Файл',
+                    value: '${file.fileName} · ${file.payload.length} байт',
+                  ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: _isWorking ? null : _exportBuiltWav,
@@ -570,6 +889,8 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
 
   Widget _buildReceive(BuildContext context) {
     final decoded = _decodedWav;
+    final decodedFile = _decodedFileWav;
+    final hasDecodedObject = decoded != null || decodedFile != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -598,14 +919,14 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  decoded == null
+                  !hasDecodedObject
                       ? 'Нет WAV для проверки.'
                       : 'WAV object проверен.',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  decoded == null
+                  !hasDecodedObject
                       ? 'Сначала соберите WAV во вкладке «Передать» или импортируйте готовую передачу.'
                       : 'Decoder вернул только объект, прошедший framing, manifest и CRC-32C проверку.',
                 ),
@@ -627,17 +948,38 @@ class _TransferWorkbenchState extends State<TransferWorkbench> {
                     '${decoded.samplesConsumed} @ ${decoded.sampleRateHz} Hz',
                   ),
                 ],
+                if (decodedFile != null) ...[
+                  const SizedBox(height: 20),
+                  _receiptRow('Позывной', decodedFile.senderCallsign),
+                  _receiptRow('Профиль', decodedFile.profile),
+                  _receiptRow('Carrier', decodedFile.carrier),
+                  _receiptRow('Файл', decodedFile.fileName),
+                  _receiptRow('MIME', decodedFile.mimeType),
+                  _receiptRow('Payload', '${decodedFile.payload.length} байт'),
+                  _receiptRow(
+                    'Семплы',
+                    '${decodedFile.samplesConsumed} @ ${decodedFile.sampleRateHz} Hz',
+                  ),
+                ],
                 const SizedBox(height: 20),
                 OutlinedButton.icon(
                   onPressed:
                       _isWorking ||
-                          _builtWav == null ||
+                          _activeWavBytes == null ||
                           !widget.bridge.isAvailable
                       ? null
                       : _verifyCurrentWav,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Повторно проверить WAV'),
                 ),
+                if (decodedFile != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isWorking ? null : _saveDecodedPayload,
+                    icon: const Icon(Icons.download_outlined),
+                    label: const Text('Сохранить проверенный файл'),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: _isWorking || !widget.bridge.isAvailable
@@ -722,6 +1064,15 @@ enum TransferRoute {
   final IconData icon;
 }
 
+enum TransferObjectKind {
+  text('Текст', Icons.notes_outlined),
+  file('Файл', Icons.insert_drive_file_outlined);
+
+  const TransferObjectKind(this.label, this.icon);
+  final String label;
+  final IconData icon;
+}
+
 class SignalMark extends StatelessWidget {
   const SignalMark({super.key});
 
@@ -794,4 +1145,54 @@ class Metric extends StatelessWidget {
       ],
     ),
   );
+}
+
+class TaskStatePanel extends StatelessWidget {
+  const TaskStatePanel({super.key, required this.task});
+
+  final TransferTaskState task;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (task.phase) {
+      TransferTaskPhase.completed => const Color(0xFFFFB000),
+      TransferTaskPhase.rejected ||
+      TransferTaskPhase.unavailable => const Color(0xFFFF8A65),
+      TransferTaskPhase.cancelled => const Color(0xFFC9C5B9),
+      _ => const Color(0xFFB8D8BA),
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            task.label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            task.message,
+            style: const TextStyle(fontSize: 12, height: 1.35),
+          ),
+          if (task.detail case final detail?) ...[
+            const SizedBox(height: 4),
+            Text(
+              detail,
+              style: const TextStyle(color: Color(0xFFC9C5B9), fontSize: 11),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

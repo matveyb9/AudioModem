@@ -9,7 +9,8 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | GitHub-first bootstrap | Completed | Public repository policy, issue forms, CI workflows, protected main and static-site workflow. |
 | ADLP v1 and WAV reference | Completed | Rust container, CRC-32C, deterministic PCM/WAV round trip, CLI and initial specification. |
 | Flutter ↔ Rust bridge | Completed | Native UI invokes reviewed Rust ADLP/WAV encode/decode; web reports the native codec unavailable. |
-| Local WAV file workflow | Completed | User-selected save/open dialogs export/import verified WAV bytes; file-object payloads remain future work. |
+| Local WAV file workflow | Completed | User-selected save/open dialogs export/import verified WAV bytes; file-object UI remains future work. |
+| File-object local WAV workflow | Experimental bounded workflow | ADLP `File` constructor, bounded 8 KiB Rust facade, deterministic WAV fixture, CLI and Flutter local pick/receipt/save flow exist; no physical route is enabled. |
 | Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
 | Acoustic-2 | Experimental measurement harness | Declared integer PCM transforms, bounded acquisition observables and golden measurement contract exist around Acoustic-1; no device or channel metric claim. |
 | Device-acceptance infrastructure | Completed reporting/tooling contract | Schema, validator, privacy-preserving intake template and decision gates prepare future evidence; no physical-route observation or supported device claim exists. |

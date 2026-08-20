@@ -41,6 +41,30 @@ class WavDecodeResult {
   final int samplesConsumed;
 }
 
+class WavFileDecodeResult {
+  const WavFileDecodeResult({
+    required this.sessionId,
+    required this.senderCallsign,
+    required this.profile,
+    required this.carrier,
+    required this.fileName,
+    required this.mimeType,
+    required this.payload,
+    required this.sampleRateHz,
+    required this.samplesConsumed,
+  });
+
+  final int sessionId;
+  final String senderCallsign;
+  final String profile;
+  final String carrier;
+  final String fileName;
+  final String mimeType;
+  final Uint8List payload;
+  final int sampleRateHz;
+  final int samplesConsumed;
+}
+
 abstract interface class WavBootstrapBridge {
   bool get isAvailable;
 
@@ -52,7 +76,22 @@ abstract interface class WavBootstrapBridge {
     required String carrier,
   });
 
+  Future<WavBuildResult> encodeFile({
+    required int sessionId,
+    required String senderCallsign,
+    required String fileName,
+    required String mimeType,
+    required Uint8List payload,
+    required String profile,
+    required String carrier,
+  });
+
   Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  });
+
+  Future<WavFileDecodeResult> decodeWavFile({
     required Uint8List wavBytes,
     required String carrier,
   });
@@ -61,13 +100,15 @@ abstract interface class WavBootstrapBridge {
 class NativeWavBootstrapBridge implements WavBootstrapBridge {
   NativeWavBootstrapBridge._();
 
+  static Future<void>? _initialization;
+
   static Future<NativeWavBootstrapBridge> create() async {
     if (kIsWeb) {
       throw UnsupportedError(
         'The native Rust WAV bridge is not available in the web build yet.',
       );
     }
-    await AudioModemRust.init();
+    await (_initialization ??= AudioModemRust.init());
     return NativeWavBootstrapBridge._();
   }
 
@@ -99,6 +140,34 @@ class NativeWavBootstrapBridge implements WavBootstrapBridge {
   }
 
   @override
+  Future<WavBuildResult> encodeFile({
+    required int sessionId,
+    required String senderCallsign,
+    required String fileName,
+    required String mimeType,
+    required Uint8List payload,
+    required String profile,
+    required String carrier,
+  }) async {
+    final result = await rust.encodeFileToWav(
+      sessionId: sessionId,
+      senderCallsign: senderCallsign,
+      fileName: fileName,
+      mimeType: mimeType,
+      payload: payload,
+      profile: profile,
+      carrier: carrier,
+    );
+    return WavBuildResult(
+      sessionId: result.sessionId,
+      profile: result.profile,
+      carrier: result.carrier,
+      sampleRateHz: result.sampleRateHz,
+      wavBytes: result.wavBytes,
+    );
+  }
+
+  @override
   Future<WavDecodeResult> decodeWav({
     required Uint8List wavBytes,
     required String carrier,
@@ -113,6 +182,28 @@ class NativeWavBootstrapBridge implements WavBootstrapBridge {
       profile: result.profile,
       carrier: result.carrier,
       text: result.text,
+      sampleRateHz: result.sampleRateHz,
+      samplesConsumed: result.samplesConsumed,
+    );
+  }
+
+  @override
+  Future<WavFileDecodeResult> decodeWavFile({
+    required Uint8List wavBytes,
+    required String carrier,
+  }) async {
+    final result = await rust.decodeWavFile(
+      wavBytes: wavBytes,
+      carrier: carrier,
+    );
+    return WavFileDecodeResult(
+      sessionId: result.sessionId,
+      senderCallsign: result.senderCallsign,
+      profile: result.profile,
+      carrier: result.carrier,
+      fileName: result.fileName,
+      mimeType: result.mimeType,
+      payload: result.payload,
       sampleRateHz: result.sampleRateHz,
       samplesConsumed: result.samplesConsumed,
     );
@@ -137,7 +228,24 @@ class UnavailableWavBootstrapBridge implements WavBootstrapBridge {
   }) => Future.error(StateError(reason));
 
   @override
+  Future<WavBuildResult> encodeFile({
+    required int sessionId,
+    required String senderCallsign,
+    required String fileName,
+    required String mimeType,
+    required Uint8List payload,
+    required String profile,
+    required String carrier,
+  }) => Future.error(StateError(reason));
+
+  @override
   Future<WavDecodeResult> decodeWav({
+    required Uint8List wavBytes,
+    required String carrier,
+  }) => Future.error(StateError(reason));
+
+  @override
+  Future<WavFileDecodeResult> decodeWavFile({
     required Uint8List wavBytes,
     required String carrier,
   }) => Future.error(StateError(reason));

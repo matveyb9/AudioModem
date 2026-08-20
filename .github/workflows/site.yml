@@ -39,6 +39,7 @@ jobs:
             "docs/reference/platform-support.md:docs/reference/platform-support_RU.md"
             "docs/reference/presets.md:docs/reference/presets_RU.md"
             "docs/troubleshooting.md:docs/troubleshooting_RU.md"
+            "docs/implementation-plan.md:docs/implementation-plan_RU.md"
             "docs/roadmap.md:docs/roadmap_RU.md"
             "docs/research/acoustic-1-phy-sources.md:docs/research/acoustic-1-phy-sources_RU.md"
             "docs/research/acoustic-2-measurement-sources.md:docs/research/acoustic-2-measurement-sources_RU.md"

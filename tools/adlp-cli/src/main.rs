@@ -1,4 +1,4 @@
-use std::{env, error::Error, fs, process};
+use std::{env, error::Error, fs, path::Path, process};
 
 use adlp_protocol::{ObjectKind, TransferProfile, WireObject};
 use audio_modem_core::{acoustic1, acoustic2, decode_wav, encode_wav};
@@ -15,6 +15,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     match args.get(1).map(String::as_str) {
         Some("encode-text") => encode_text(&args, false),
         Some("encode-acoustic1-text") => encode_text(&args, true),
+        Some("encode-file") => encode_file(&args, false),
+        Some("encode-acoustic1-file") => encode_file(&args, true),
         Some("decode") => decode(&args, false),
         Some("decode-acoustic1") => decode(&args, true),
         Some("measure-acoustic1") => measure_acoustic1(&args),
@@ -52,6 +54,45 @@ fn encode_text(args: &[String], acoustic1_carrier: bool) -> Result<(), Box<dyn E
     Ok(())
 }
 
+fn encode_file(args: &[String], acoustic1_carrier: bool) -> Result<(), Box<dyn Error>> {
+    let output = args.get(2).ok_or("missing output WAV path")?;
+    let callsign = args.get(3).ok_or("missing callsign")?;
+    let input = args.get(4).ok_or("missing input file path")?;
+    let mime_type = args
+        .get(5)
+        .map(String::as_str)
+        .unwrap_or("application/octet-stream");
+    let profile = args
+        .get(6)
+        .map(|value| parse_profile(value))
+        .transpose()?
+        .unwrap_or(TransferProfile::Balanced);
+    let file_name = Path::new(input)
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or("input file name must be valid UTF-8")?;
+    let object = WireObject::file(2, callsign, file_name, mime_type, fs::read(input)?, profile)?;
+    let carrier = if acoustic1_carrier {
+        "Acoustic-1"
+    } else {
+        "bootstrap"
+    };
+    let wav = if acoustic1_carrier {
+        acoustic1::encode_wav(&object)?
+    } else {
+        encode_wav(&object)?
+    };
+    fs::write(output, wav)?;
+    println!(
+        "encoded file {} ({} bytes) as {} {} WAV transfer",
+        file_name,
+        object.payload.len(),
+        profile.as_str(),
+        carrier
+    );
+    Ok(())
+}
+
 fn decode(args: &[String], acoustic1_carrier: bool) -> Result<(), Box<dyn Error>> {
     let input = args.get(2).ok_or("missing input WAV path")?;
     let (object, samples_consumed) = if acoustic1_carrier {
@@ -74,10 +115,15 @@ fn decode(args: &[String], acoustic1_carrier: bool) -> Result<(), Box<dyn Error>
     println!("profile: {}", manifest.profile.as_str());
     println!("session: {}", manifest.session_id);
     println!("callsign: {}", manifest.sender_callsign);
+    println!("mime: {}", manifest.mime_type);
     println!("samples: {samples_consumed}");
     match manifest.object_kind {
         ObjectKind::Text => println!("text: {}", String::from_utf8(object.payload)?),
-        ObjectKind::File => println!("file payload: {} bytes", object.payload.len()),
+        ObjectKind::File => println!(
+            "file: {} ({} bytes)",
+            manifest.file_name,
+            object.payload.len()
+        ),
     }
     Ok(())
 }
@@ -141,5 +187,5 @@ fn parse_profile(value: &str) -> Result<TransferProfile, Box<dyn Error>> {
 }
 
 fn usage() -> &'static str {
-    "Usage:\n  adlp-cli encode-text <output.wav> <callsign> <text> [reliable|balanced|fast|narrowband]\n  adlp-cli decode <input.wav>\n  adlp-cli encode-acoustic1-text <output.wav> <callsign> <text> [reliable|balanced|fast|narrowband]\n  adlp-cli decode-acoustic1 <input.wav>\n  adlp-cli measure-acoustic1 <input.wav> [leading-silence] [gain-per-mille] [noise-peak] [noise-seed] [clip-abs] [drop-every-nth]"
+    "Usage:\n  adlp-cli encode-text <output.wav> <callsign> <text> [reliable|balanced|fast|narrowband]\n  adlp-cli encode-file <output.wav> <callsign> <input-file> [mime-type] [reliable|balanced|fast|narrowband]\n  adlp-cli decode <input.wav>\n  adlp-cli encode-acoustic1-text <output.wav> <callsign> <text> [reliable|balanced|fast|narrowband]\n  adlp-cli encode-acoustic1-file <output.wav> <callsign> <input-file> [mime-type] [reliable|balanced|fast|narrowband]\n  adlp-cli decode-acoustic1 <input.wav>\n  adlp-cli measure-acoustic1 <input.wav> [leading-silence] [gain-per-mille] [noise-peak] [noise-seed] [clip-abs] [drop-every-nth]"
 }

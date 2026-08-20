@@ -2,7 +2,7 @@
 
 [English (canonical)](getting-started.md) · **Русский перевод**
 
-> **Translation of:** [docs/guides/getting-started.md](getting-started.md). **Last synced:** 2026-08-20.
+> **Translation of:** [docs/guides/getting-started.md](getting-started.md). **Last synced:** 2026-08-21.
 
 Это руководство проверяет первый реализованный путь AudioModem. Оно не проверяет динамик, микрофон, Bluetooth-устройство или радиостанцию. Вместо этого используется lossless WAV, чтобы неудачный round trip можно было отнести к container или codec, а не к неизвестному live-аудиомаршруту.
 
@@ -26,7 +26,7 @@ cargo run -p adlp-cli -- encode-text hello.wav N1 "Hello from AudioModem" reliab
 
 Команда сериализует ADLP v1 text object и отображает его в mono 48 kHz signed 16-bit PCM WAV. `N1` — callsign, видимый в открытой metadata. Он **не** идентифицирует и не аутентифицирует отправителя.
 
-## Передача файла и декодирование
+## Передача text WAV и декодирование
 
 Скопируйте `hello.wav` на принимающую машину любым обычным файловым каналом и выполните:
 
@@ -35,6 +35,18 @@ cargo run -p adlp-cli -- decode hello.wav
 ```
 
 Decoder выводит ADLP version, profile, session value, callsign, sample count и text. Он обязан отклонить malformed bootstrap framing или CRC-32C mismatch до возврата payload.
+
+## Кодирование небольшого файла в WAV
+
+Rust CLI также может проверить bounded ADLP `File` object до появления Flutter file-transfer UI. Первый facade limit — **8 KiB** file payload. Если MIME type известен, передайте его явно; default — `application/octet-stream`.
+
+```bash
+printf 'fixture bytes\n' > sample.bin
+cargo run -p adlp-cli -- encode-file sample.wav N1 sample.bin application/octet-stream balanced
+cargo run -p adlp-cli -- decode sample.wav
+```
+
+После ADLP framing и CRC-32C validation decoder выводит original leaf file name, declared MIME type и payload size. Это только reproducible Rust/WAV contract. Он **не** даёт Flutter file picker/receipt workflow, persistence, file-size policy сверх initial facade limit или physical audio route.
 
 ## Controlled Acoustic-1 WAV experiment
 
@@ -62,6 +74,7 @@ cargo run -p adlp-cli -- measure-acoustic1 acoustic1.wav 137 500 200 2885812225 
 | Тест доказывает | Тест не доказывает |
 | --- | --- |
 | Реализованный ADLP v1 object переживает один детерминированный WAV encode/decode cycle. | Что waveform пройдёт через speech-band audio, динамик, микрофон, кабель, Bluetooth adapter или радио. |
+| Bounded file object сохраняет name, declared MIME type и bytes через Rust CLI WAV reference path. | Что Flutter application уже может отправить или сохранить file-object transfer. |
 | Final integrity check обнаруживает intentional corrupted-frame cases из Rust-тестов; Acoustic-1 также имеет bounded noise, framing, FEC и golden-vector regression cases. | Что callsign принадлежит человеку, устройству или ключу. |
 | Acoustic-2 transform vector имеет deterministic PCM output и codec-observable acquisition values. | Что synthetic gain/noise/clip/deletion values предсказывают physical audio channel. |
 | Тест переносим между Rust development environments. | Что передача зашифрована, конфиденциальна или authenticated. |

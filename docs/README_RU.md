@@ -4,7 +4,7 @@
 
 Этот каталог содержит читаемую техническую документацию AudioModem. Английские файлы являются каноническими. Русские переводы используют суффикс `_RU.md`, ссылаются на английский оригинал и носят информативный характер, пока RFC явно не установит иное.
 
-> **Translation of:** [docs/README.md](README.md). **Last synced:** 2026-08-20.
+> **Translation of:** [docs/README.md](README.md). **Last synced:** 2026-08-21.
 
 | Раздел | Английский оригинал | Русский перевод | Область |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@
 | Operations | [Troubleshooting](troubleshooting.md) | [Диагностика](troubleshooting_RU.md) | Воспроизводимые наблюдения и отчёты |
 | Operations | [Device acceptance](operations/device-acceptance.md) | [Приёмка устройств](operations/device-acceptance_RU.md) | Evidence contract и decision gates для будущих live routes |
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Проверенная работа и ближайшие milestones |
+| Project | [Implementation plan](implementation-plan.md) | [План реализации](implementation-plan_RU.md) | Test-gated порядок от core contracts через Flutter shell к route evidence |
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Граница native facade и проверки WAV в памяти |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Структура generated code и команда повторной генерации |
 | Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Источники дизайна и явные receiver/FEC constraints |

@@ -29,6 +29,9 @@ abstract class AudioModemRustApiImplPlatform
   String dco_decode_String(dynamic raw);
 
   @protected
+  DecodedFileTransfer dco_decode_decoded_file_transfer(dynamic raw);
+
+  @protected
   DecodedTextTransfer dco_decode_decoded_text_transfer(dynamic raw);
 
   @protected
@@ -54,6 +57,11 @@ abstract class AudioModemRustApiImplPlatform
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  DecodedFileTransfer sse_decode_decoded_file_transfer(
+    SseDeserializer deserializer,
+  );
 
   @protected
   DecodedTextTransfer sse_decode_decoded_text_transfer(
@@ -91,6 +99,12 @@ abstract class AudioModemRustApiImplPlatform
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_decoded_file_transfer(
+    DecodedFileTransfer self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_decoded_text_transfer(
