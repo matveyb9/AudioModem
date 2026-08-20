@@ -15,6 +15,7 @@ This directory holds the human-readable technical documentation for AudioModem. 
 | Project | [Roadmap](roadmap.md) | [Дорожная карта](roadmap_RU.md) | Verified work and upcoming milestones |
 | Project | [Implementation plan](implementation-plan.md) | [План реализации](implementation-plan_RU.md) | Test-gated order from core contracts through Flutter shell and route evidence |
 | Architecture | [Flutter ↔ Rust WAV bridge](architecture/flutter-rust-bridge.md) | [Flutter ↔ Rust WAV bridge на русском](architecture/flutter-rust-bridge_RU.md) | Native facade and in-memory WAV verification boundary |
+| Architecture | [Android foreground live audio](architecture/android-live-audio.md) | [Android foreground live audio на русском](architecture/android-live-audio_RU.md) | Experimental source adapter and evidence boundary |
 | Research | [Flutter Rust Bridge integration](research/flutter-rust-bridge-integration.md) | [Flutter Rust Bridge integration на русском](research/flutter-rust-bridge-integration_RU.md) | Generated-code layout and regeneration command |
 | Research | [Acoustic-1 PHY sources](research/acoustic-1-phy-sources.md) | [Источники Acoustic-1 PHY](research/acoustic-1-phy-sources_RU.md) | Design sources and explicit receiver/FEC constraints |
 | Research | [Acoustic-2 measurement sources](research/acoustic-2-measurement-sources.md) | [Источники измерений Acoustic-2](research/acoustic-2-measurement-sources_RU.md) | Controlled PCM transform and timing-acquisition constraints |

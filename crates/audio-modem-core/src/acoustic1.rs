@@ -101,6 +101,20 @@ pub fn encode_wav(object: &WireObject) -> Result<Vec<u8>, Acoustic1Error> {
     Ok(make_canonical_wav(&encode_samples(object)?)?)
 }
 
+/// Encodes one Acoustic-1 object as mono signed PCM16 little-endian frames.
+///
+/// This is the only raw-frame form intended for a future live adapter. The
+/// carrier, FEC and ADLP object remain Rust-owned; callers must not generate
+/// symbols or apply a format conversion themselves.
+pub fn encode_pcm16le(object: &WireObject) -> Result<Vec<u8>, Acoustic1Error> {
+    let samples = encode_samples(object)?;
+    let mut pcm = Vec::with_capacity(samples.len() * 2);
+    for sample in samples {
+        pcm.extend_from_slice(&sample.to_le_bytes());
+    }
+    Ok(pcm)
+}
+
 pub fn decode_wav(wav: &[u8]) -> Result<DecodedAcousticTransfer, Acoustic1Error> {
     let (sample_rate_hz, samples) = parse_canonical_wav(wav)?;
     if sample_rate_hz != SAMPLE_RATE_HZ {
@@ -108,7 +122,23 @@ pub fn decode_wav(wav: &[u8]) -> Result<DecodedAcousticTransfer, Acoustic1Error>
             "sample rate must be 48 kHz",
         )));
     }
+    decode_samples(&samples)
+}
 
+/// Decodes mono signed PCM16 little-endian frames using the Acoustic-1 carrier.
+pub fn decode_pcm16le(pcm: &[u8]) -> Result<DecodedAcousticTransfer, Acoustic1Error> {
+    let (frames, remainder) = pcm.as_chunks::<2>();
+    if !remainder.is_empty() {
+        return Err(Acoustic1Error::TruncatedSignal);
+    }
+    let samples = frames
+        .iter()
+        .map(|sample| i16::from_le_bytes(*sample))
+        .collect::<Vec<_>>();
+    decode_samples(&samples)
+}
+
+fn decode_samples(samples: &[i16]) -> Result<DecodedAcousticTransfer, Acoustic1Error> {
     for config in PROFILE_CONFIGS {
         let minimum_samples = (PREAMBLE_BITS + 16 + 56) * config.samples_per_symbol;
         if samples.len() < minimum_samples {
@@ -116,7 +146,7 @@ pub fn decode_wav(wav: &[u8]) -> Result<DecodedAcousticTransfer, Acoustic1Error>
         }
         let maximum_offset = MAX_SYNC_OFFSET_SAMPLES.min(samples.len() - minimum_samples);
         for offset in 0..=maximum_offset {
-            if let Ok(decoded) = decode_candidate(&samples, offset, config) {
+            if let Ok(decoded) = decode_candidate(samples, offset, config) {
                 return Ok(decoded);
             }
         }
@@ -351,6 +381,26 @@ mod tests {
             assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
             assert_eq!(decoded.frame_start_candidate_samples, 0);
         }
+    }
+
+    #[test]
+    fn every_profile_round_trips_through_acoustic1_pcm16le() {
+        for config in PROFILE_CONFIGS {
+            let object = test_object(config.profile);
+            let pcm = encode_pcm16le(&object).unwrap();
+            let decoded = decode_pcm16le(&pcm).unwrap();
+            assert_eq!(decoded.object, object);
+            assert_eq!(decoded.sample_rate_hz, SAMPLE_RATE_HZ);
+            assert_eq!(decoded.frame_start_candidate_samples, 0);
+        }
+    }
+
+    #[test]
+    fn odd_length_pcm16le_is_rejected() {
+        assert!(matches!(
+            decode_pcm16le(&[0]),
+            Err(Acoustic1Error::TruncatedSignal)
+        ));
     }
 
     #[test]

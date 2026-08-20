@@ -16,8 +16,8 @@
 | Acoustic-1 | Экспериментальный controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols и golden vectors существуют для PCM/WAV tests; speaker-to-microphone claim отсутствует. |
 | Acoustic-2 | Экспериментальный measurement harness | Вокруг Acoustic-1 существуют declared integer PCM transforms, bounded acquisition observables и golden measurement contract; device или channel metric claim отсутствует. |
 | Device-acceptance infrastructure | Завершён reporting/tooling contract | Schema, validator, privacy-preserving intake template и decision gates готовят future evidence; physical-route observation или supported device claim отсутствуют. |
-| Live-audio adapter contract | Завершён unavailable scaffold | Существуют typed PCM/lifecycle boundary и unavailable behavior tests; plugin, permission, capture, playback или physical route не включены. |
-| Android foreground live-audio design | Draft experimental route design | Существуют Android API 26+ RFC, research decision и route-observation validator extension; Android adapter, permission flow, target build или physical-route result отсутствуют. |
+| Live-audio adapter contract | Завершён typed boundary | Unavailable behavior остаётся default вне declared scope; существуют typed PCM/lifecycle tests. |
+| Android foreground live audio | Experimental source implementation | Существуют Android API 26+ Kotlin/Flutter/Rust source, permission/focus/stop contract tests и route-observation validator extension; target build, runtime behavior и physical-route result остаются непроверенными. |
 | Audio adapters | Планируется | Capture/playback, cable, Bluetooth и radio-interface adapters с per-platform acceptance tests. |
 | Trust и encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX и independent security review. |
 | Release engineering | Планируется | Signed packages, compatibility matrix, changelog, SBOM/checksums и clear support policy. |

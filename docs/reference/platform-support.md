@@ -8,7 +8,7 @@ AudioModem keeps Flutter runners for Android, iOS, Windows, macOS, Linux and Web
 
 | Platform | Flutter runner | Rust/WAV integration | Local WAV workflow | Live audio | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Android | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Draft experimental design | [Foreground adapter RFC](../../spec/android-live-audio-adapter-v1.md) and validator extension exist; target build, permission behavior, adapter and route evidence remain unverified. |
+| Android | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Experimental source implementation | [Foreground adapter RFC](../../spec/android-live-audio-adapter-v1.md), Kotlin/Flutter/Rust adapter source and validator extension exist; target build, permission behavior, runtime and route evidence remain unverified. |
 | iOS | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires target build, permission and route-adapter acceptance tests. |
 | Windows | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires native device enumeration and routing tests. |
 | macOS | Scaffolded | Bridge source integrated; target build/run not verified | Source implementation; target dialog not verified | Planned | Requires native device enumeration and routing tests. |

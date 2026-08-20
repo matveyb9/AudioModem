@@ -7,9 +7,9 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `as_str`, `decode_selected_wav`, `parse_carrier`, `parse_profile`
+// These functions are ignored because they are not marked as `pub`: `as_str`, `decode_selected_wav`, `parse_carrier`, `parse_live_pcm_carrier`, `parse_profile`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `Carrier`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`
 
 /// Encodes one text-only ADLP object into a selected canonical 48 kHz WAV carrier.
 Future<EncodedWavTransfer> encodeTextToWav({
@@ -45,6 +45,22 @@ Future<EncodedWavTransfer> encodeFileToWav({
   carrier: carrier,
 );
 
+/// Encodes a text ADLP object as experimental Acoustic-1 PCM16 LE frames.
+/// No live device is accessed here; the bootstrap carrier is intentionally excluded.
+Future<EncodedPcmTransfer> encodeTextToLivePcm({
+  required int sessionId,
+  required String senderCallsign,
+  required String text,
+  required String profile,
+  required String carrier,
+}) => AudioModemRust.instance.api.crateApiWavBootstrapEncodeTextToLivePcm(
+  sessionId: sessionId,
+  senderCallsign: senderCallsign,
+  text: text,
+  profile: profile,
+  carrier: carrier,
+);
+
 /// Decodes and verifies selected-carrier WAV bytes before exposing text metadata to Flutter.
 Future<DecodedTextTransfer> decodeWavText({
   required List<int> wavBytes,
@@ -60,6 +76,16 @@ Future<DecodedFileTransfer> decodeWavFile({
   required String carrier,
 }) => AudioModemRust.instance.api.crateApiWavBootstrapDecodeWavFile(
   wavBytes: wavBytes,
+  carrier: carrier,
+);
+
+/// Decodes one bounded capture buffer as an experimental Acoustic-1 text object.
+/// The caller owns capture lifecycle; this method verifies carrier and ADLP integrity.
+Future<DecodedTextTransfer> decodeLivePcmText({
+  required List<int> pcmFrames,
+  required String carrier,
+}) => AudioModemRust.instance.api.crateApiWavBootstrapDecodeLivePcmText(
+  pcmFrames: pcmFrames,
   carrier: carrier,
 );
 
@@ -155,6 +181,41 @@ class DecodedTextTransfer {
           text == other.text &&
           sampleRateHz == other.sampleRateHz &&
           samplesConsumed == other.samplesConsumed;
+}
+
+class EncodedPcmTransfer {
+  final int sessionId;
+  final String profile;
+  final String carrier;
+  final int sampleRateHz;
+  final Uint8List pcmFrames;
+
+  const EncodedPcmTransfer({
+    required this.sessionId,
+    required this.profile,
+    required this.carrier,
+    required this.sampleRateHz,
+    required this.pcmFrames,
+  });
+
+  @override
+  int get hashCode =>
+      sessionId.hashCode ^
+      profile.hashCode ^
+      carrier.hashCode ^
+      sampleRateHz.hashCode ^
+      pcmFrames.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EncodedPcmTransfer &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId &&
+          profile == other.profile &&
+          carrier == other.carrier &&
+          sampleRateHz == other.sampleRateHz &&
+          pcmFrames == other.pcmFrames;
 }
 
 class EncodedWavTransfer {

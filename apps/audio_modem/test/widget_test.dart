@@ -97,6 +97,30 @@ class _FakeWavBridge implements WavBootstrapBridge {
       samplesConsumed: 768,
     );
   }
+
+  @override
+  Future<LivePcmBuildResult> encodeTextToLivePcm({
+    required int sessionId,
+    required String senderCallsign,
+    required String text,
+    required String profile,
+    required String carrier,
+  }) async {
+    encodedCarrier = carrier;
+    return LivePcmBuildResult(
+      sessionId: sessionId,
+      profile: profile,
+      carrier: carrier,
+      sampleRateHz: 48000,
+      pcmFrames: Uint8List.fromList([0, 1]),
+    );
+  }
+
+  @override
+  Future<WavDecodeResult> decodeLivePcmText({
+    required Uint8List pcmFrames,
+    required String carrier,
+  }) => decodeWav(wavBytes: pcmFrames, carrier: carrier);
 }
 
 class _FakeWavFileAdapter implements WavFileAdapter {
@@ -397,7 +421,7 @@ void main() {
 
     final buildButton = find.widgetWithText(
       FilledButton,
-      'Собрать и проверить WAV',
+      'Передать Android PCM',
     );
     await tester.ensureVisible(buildButton);
     await tester.tap(buildButton);

@@ -4,7 +4,7 @@
 
 > **Translation of:** [spec/android-live-audio-adapter-v1.md](android-live-audio-adapter-v1.md). **Last synced:** 2026-08-21.
 
-**Статус:** Draft experimental platform-route design. Это не включает Android audio, не устанавливает device result и не заявляет Android, speaker-to-microphone, cable, Bluetooth, headset или radio support.
+**Статус:** Experimental source implementation. Kotlin/Flutter/Rust source существует, но Android target runtime или physical route не проверены. Это не устанавливает device result и не заявляет Android, speaker-to-microphone, cable, Bluetooth, headset или radio support.
 
 ## Scope
 
@@ -21,7 +21,7 @@ Requested application format — существующий `PcmStreamFormat.audio
 
 ## Permission, focus и lifecycle
 
-`RECORD_AUDIO` объявляется только когда этот RFC станет approved implementation change. Capture начинается лишь после нажатия user capture action, runtime permission grant и initialized `AudioRecord`. Permission request должен быть contextual и cancellable, а после denial или revocation application деградирует к существующему WAV workflow. [1] [3]
+Experimental source объявляет `RECORD_AUDIO`, но capture начинается лишь после нажатия user capture action, runtime permission grant и initialized `AudioRecord`. Permission request должен быть contextual и cancellable, а после denial или revocation application деградирует к существующему WAV workflow. [1] [3]
 
 Playback запрашивает `AudioFocusRequest` непосредственно перед `AudioTrack.play()`. Denied focus request отклоняет attempt. Delayed request остаётся pending и не может write/play PCM до focus grant. Permanent или transient focus loss, route change, user stop, record/track failure или application lifecycle stop завершает operation; v1 никогда auto-resume. Android focus guidance требует реакции на focus loss и abandon focus после playback end. [4]
 
@@ -34,7 +34,7 @@ playing|capturing ──(stop, focus loss, route change, lifecycle stop, native 
 any state ──(dispose)──> disposed
 ```
 
-Текущий Flutter `LiveAudioAdapter` interface для этого RFC не меняется. Later implementation может показать platform diagnostics через отдельный event stream или status object, но не должен exposing unbounded raw microphone PCM как diagnostic data или заставлять unavailable adapter инициализировать Android audio APIs.
+Текущий Flutter `LiveAudioAdapter` interface для этого RFC не меняется. Experimental source показывает capture frames только через bounded transient event stream; он не должен exposing unbounded raw microphone PCM как diagnostic data или заставлять unavailable adapter инициализировать Android audio APIs.
 
 ## Native operation rules
 
@@ -66,7 +66,7 @@ Accepted operation означает только platform-side lifecycle complet
 
 ## Non-goals
 
-Этот RFC ещё не одобряет implementation. Он исключает Android API ниже 26, Web, iOS, Windows, macOS и Linux adapters; `MediaRecorder`; direct Rust microphone access; Bluetooth/cable/radio routing; device picker UI; background service; notification controls; persistence/history; duplex; echo cancellation; AGC; resampling; timing recovery changes; physical performance metrics; authentication; encryption; file-transfer changes и supported-route claim.
+Этот RFC не устанавливает supported implementation. Он исключает Android API ниже 26, Web, iOS, Windows, macOS и Linux adapters; `MediaRecorder`; direct Rust microphone access; Bluetooth/cable/radio routing; device picker UI; background service; notification controls; persistence/history; duplex; echo cancellation; AGC; resampling; timing recovery changes; physical performance metrics; authentication; encryption; file-transfer changes и supported-route claim.
 
 ## References
 
