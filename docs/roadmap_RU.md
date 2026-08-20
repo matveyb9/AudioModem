@@ -13,6 +13,7 @@
 | Flutter ↔ Rust bridge | Завершён | Native UI вызывает reviewed Rust ADLP/WAV encode/decode; web сообщает, что native codec недоступен. |
 | Локальный WAV file workflow | Завершён | User-selected save/open dialogs экспортируют/импортируют проверенные WAV bytes; file-object payloads остаются будущей работой. |
 | Acoustic-1 | Экспериментальный controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols и golden vectors существуют для PCM/WAV tests; speaker-to-microphone claim отсутствует. |
+| Acoustic-2 | Экспериментальный measurement harness | Вокруг Acoustic-1 существуют declared integer PCM transforms, bounded acquisition observables и golden measurement contract; device или channel metric claim отсутствует. |
 | Audio adapters | Планируется | Capture/playback, cable, Bluetooth и radio-interface adapters с per-platform acceptance tests. |
 | Trust и encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX и independent security review. |
 | Release engineering | Планируется | Signed packages, compatibility matrix, changelog, SBOM/checksums и clear support policy. |

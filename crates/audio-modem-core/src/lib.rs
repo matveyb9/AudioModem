@@ -5,6 +5,7 @@
 //! profile can replace this simple symbol mapper without changing ADLP bytes.
 
 pub mod acoustic1;
+pub mod acoustic2;
 
 use std::fmt;
 

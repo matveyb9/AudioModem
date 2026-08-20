@@ -45,14 +45,25 @@ cargo run -p adlp-cli -- decode-acoustic1 acoustic1.wav
 
 An Acoustic-1 WAV round trip proves controlled PCM/WAV codec behavior only. It does not prove speaker-to-microphone synchronisation, room-noise tolerance, gain handling, radio compatibility or any live route.
 
+## Acoustic-2 controlled measurement
+
+Acoustic-2 applies declared integer-domain transforms to an existing Acoustic-1 WAV, then reports only what the existing codec can observe. The optional values below are leading silence, gain per mille, noise peak, noise seed and hard-clip threshold.
+
+```bash
+cargo run -p adlp-cli -- measure-acoustic1 acoustic1.wav 137 500 200 2885812225 8000
+```
+
+The command prints an accepted/rejected codec result, sample counts, bounded acquisition offset and ADLP profile. The numbers are reproducible for that exact WAV and parameter vector; they are not BER, SNR, range, room-noise, clock-drift or device compatibility metrics. See the [Acoustic-2 contract](../../spec/acoustic-2.md) for the full transform order and bounds.
+
 ## What this proves—and what it does not
 
 | This test proves | This test does not prove |
 | --- | --- |
 | The implemented ADLP v1 object can survive one deterministic WAV encode/decode cycle. | That speech-band audio, a speaker, microphone, cable, Bluetooth adapter or radio can carry the waveform. |
 | The final integrity check detects the intentional corrupted-frame cases covered by the Rust tests; Acoustic-1 also has bounded noise, framing, FEC and golden-vector regression cases. | That a callsign belongs to a person, device or key. |
+| An Acoustic-2 transform vector has deterministic PCM output and codec-observable acquisition values. | That synthetic gain/noise/clip/deletion values predict a physical audio channel. |
 | The test is portable between supported Rust development environments. | That a transmission is encrypted, confidential or authenticated. |
 
 ## Next steps
 
-Read [Audio routes](audio-routes.md) to understand why WAV is the reference transport and what is required before a live route becomes supported. Read the [ADLP v1 specification](../../spec/protocol-v1.md) for the object layout and the [Acoustic-1 RFC](../../spec/acoustic-1.md) for experimental carrier compatibility.
+Read [Audio routes](audio-routes.md) to understand why WAV is the reference transport and what is required before a live route becomes supported. Read the [ADLP v1 specification](../../spec/protocol-v1.md) for the object layout, the [Acoustic-1 RFC](../../spec/acoustic-1.md) for experimental carrier compatibility and the [Acoustic-2 contract](../../spec/acoustic-2.md) for controlled measurements.

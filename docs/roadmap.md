@@ -11,6 +11,7 @@ This roadmap describes intended order, not dates or guaranteed delivery. It dist
 | Flutter ↔ Rust bridge | Completed | Native UI invokes reviewed Rust ADLP/WAV encode/decode; web reports the native codec unavailable. |
 | Local WAV file workflow | Completed | User-selected save/open dialogs export/import verified WAV bytes; file-object payloads remain future work. |
 | Acoustic-1 | Experimental controlled carrier | B-FSK framing, bounded synchronisation, Hamming(7,4), profile-driven symbols and golden vectors exist for PCM/WAV tests; no speaker-to-microphone claim. |
+| Acoustic-2 | Experimental measurement harness | Declared integer PCM transforms, bounded acquisition observables and golden measurement contract exist around Acoustic-1; no device or channel metric claim. |
 | Audio adapters | Planned | Capture/playback, cable, Bluetooth and radio-interface adapters with per-platform acceptance tests. |
 | Trust and encryption | Planned RFC | Key lifecycle, manual/QR exchange, authenticated encryption, verification UX and independent security review. |
 | Release engineering | Planned | Signed packages, compatibility matrix, changelog, SBOM/checksums and clear support policy. |

@@ -36,8 +36,10 @@ jobs:
             "docs/troubleshooting.md:docs/troubleshooting_RU.md"
             "docs/roadmap.md:docs/roadmap_RU.md"
             "docs/research/acoustic-1-phy-sources.md:docs/research/acoustic-1-phy-sources_RU.md"
+            "docs/research/acoustic-2-measurement-sources.md:docs/research/acoustic-2-measurement-sources_RU.md"
             "spec/protocol-v1.md:spec/protocol-v1_RU.md"
             "spec/acoustic-1.md:spec/acoustic-1_RU.md"
+            "spec/acoustic-2.md:spec/acoustic-2_RU.md"
           )
           for pair in "${pairs[@]}"; do
             source_path="${pair%%:*}"

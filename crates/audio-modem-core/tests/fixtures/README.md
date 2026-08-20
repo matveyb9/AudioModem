@@ -31,3 +31,22 @@ The Rust regression test both decodes this immutable fixture and regenerates it 
 | SHA-256 | `bbceae6d334284ede97ebe8113293fee53ea3e5e55822715802aa2a7819bc29b` |
 
 The Acoustic-1 test decodes the fixture, confirms the fixed ADLP object and regenerates the complete WAV byte-for-byte. A fixture change is therefore a carrier compatibility change. It requires an RFC update, an updated hash, a documented measurement rationale and a release note; it does not by itself establish live acoustic interoperability.
+
+## Acoustic-2 controlled measurement contract
+
+Acoustic-2 does not add another waveform fixture. Its first golden measurement is a fixed transform of `acoustic-1-v1-text-balanced.wav`, keeping the carrier fixture immutable and making the exact sample-domain assumptions reviewable.
+
+| Field | Canonical value |
+| --- | --- |
+| Input fixture | `acoustic-1-v1-text-balanced.wav` |
+| Leading silence | `137` samples |
+| Gain | `500` per mille |
+| Additive noise | peak `200`, seed `2885812225` |
+| Hard clip | `8000` |
+| Periodic sample deletion | none |
+| Expected output samples | `358,697` |
+| Expected acquisition offset | `21` samples |
+| Expected consumed samples | `358,581` |
+| Expected ADLP profile | `balanced` |
+
+The Rust test applies this transform and compares every listed result. These values are a deterministic codec/harness contract, not an acoustic-channel quality metric or device result.
